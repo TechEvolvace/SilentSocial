@@ -1,10 +1,3 @@
-//
-//  SceneDelegate.swift
-//  SilentSocial
-//
-//  Created by Phuc Dinh on 10/16/25.
-//
-
 import UIKit
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
