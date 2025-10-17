@@ -1,4 +1,16 @@
+//  Project: SilentSocial
+//  Names: Phuc Dinh, Nicholas Ng, Preston Tu, Rui Xue
+//  Course: CS329E
+//
+//  AppDelegate.swift
+//  SilentSocial
+//
+//  Created by Nicholas Gia-Bao Ng on 10/14/25.
+//
+
 import UIKit
+// For firebase functtionality
+import FirebaseCore
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -6,6 +18,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        // Run Firebase
+        FirebaseApp.configure()
         // Override point for customization after application launch.
         return true
     }
