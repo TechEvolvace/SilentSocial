@@ -20,9 +20,24 @@
 xcuserdata/
 *.xcuserstate
 
-# Xcode workspace and project data
-project.xcworkspace/
+# Xcode workspace and project data except for Package.resolved
 *.xcworkspace/contents.xcworkspacedata
+*.xcworkspace/xcuserdata/
+project.xcworkspace/contents.xcworkspacedata
+project.xcworkspace/xcuserdata/
+
+# Xcode shared settings - specifically ignore user-specific setting files
+xcshareddata/WorkspaceSettings.xcsettings
+*.xcworkspace/xcshareddata/*.xcsettings
+project.xcworkspace/xcshareddata/*.xcsettings
+
+# Swift Package Manager
+.swiftpm/xcode/
+.build/
+*.xcworkspace/xcshareddata/swiftpm/*
+project.xcworkspace/xcshareddata/swiftpm/*
+!*.xcworkspace/xcshareddata/swiftpm/Package.resolved
+!project.xcworkspace/xcshareddata/swiftpm/Package.resolved
 
 # Older or patch state
 *.xccheckout
@@ -47,15 +62,10 @@ DerivedData/
 *.lock
 *.moved-aside
 
-# Shared data
-xcshareddata/WorkspaceSettings.xcsettings
-
 # Package managers
 Pods/                # CocoaPods dependencies
 Carthage/            # Carthage dependencies & builds
 Carthage/Build/
-.swiftpm/            # SwiftPM data
-.build/              # SwiftPM local build
 
 # Keep configuration files for managers
 !Podfile
