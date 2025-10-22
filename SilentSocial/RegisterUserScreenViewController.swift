@@ -37,6 +37,7 @@ class RegisterUserScreenViewController: UIViewController, UITextFieldDelegate {
         if let logoImage = UIImage(named: "SilentSocialLogo") {
             registerLogoImage.image = logoImage
         }
+        
         // Set up to let keyboard dismiss work
         userRegisterField.delegate = self
         passwordRegisterField.delegate = self
