@@ -278,7 +278,7 @@
         <!--View Controller-->
         <scene sceneID="puw-nC-NgO">
             <objects>
-                <viewController id="SCd-R5-oji" sceneMemberID="viewController">
+                <viewController id="SCd-R5-oji" customClass="ViewController" customModule="SilentSocial" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="27c-FN-nzS">
                         <rect key="frame" x="0.0" y="0.0" width="402" height="802"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -296,6 +296,9 @@
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <state key="normal" title="Button"/>
                                 <buttonConfiguration key="configuration" style="plain" title="Go to Dashboard"/>
+                                <connections>
+                                    <action selector="goToDashboardTapped:" destination="SCd-R5-oji" eventType="touchUpInside" id="ssi-e9-43P"/>
+                                </connections>
                             </button>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="EAH-Dy-IeJ"/>
@@ -308,6 +311,9 @@
                             </connections>
                         </barButtonItem>
                     </navigationItem>
+                    <connections>
+                        <outlet property="goToDashboardButton" destination="8GF-oS-m4j" id="gWD-El-f0h"/>
+                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Rsz-eo-I9j" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
@@ -328,7 +334,7 @@
                                 <nil key="highlightedColor"/>
                             </label>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="n5p-iA-UmA">
-                                <rect key="frame" x="274.33333333333331" y="139" width="49" height="34.333333333333343"/>
+                                <rect key="frame" x="272.66666666666669" y="139" width="49" height="34.333333333333343"/>
                                 <color key="tintColor" white="0.33333333333333331" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <state key="normal" title="Button"/>
                                 <buttonConfiguration key="configuration" style="plain" image="bell.fill" catalog="system"/>
@@ -337,7 +343,7 @@
                                 </connections>
                             </button>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="s2H-9v-p1Y">
-                                <rect key="frame" x="323.33333333333331" y="139" width="63.666666666666686" height="34.333333333333343"/>
+                                <rect key="frame" x="336.66666666666669" y="139" width="50.333333333333314" height="34.333333333333343"/>
                                 <color key="tintColor" white="0.33333333329999998" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <state key="normal" title="Button"/>
                                 <buttonConfiguration key="configuration" style="plain" image="gearshape.fill" catalog="system"/>
@@ -346,14 +352,18 @@
                                 </connections>
                             </button>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Start your journey with SilentSocial!" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="0sZ-Lo-jv1">
-                                <rect key="frame" x="30" y="178.33333333333334" width="342" height="22"/>
+                                <rect key="frame" x="30" y="188.33333333333334" width="342" height="22"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="18"/>
                                 <nil key="textColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="1" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="5ah-7a-XAT">
-                                <rect key="frame" x="312" y="139" width="6.3333333333333144" height="14.333333333333343"/>
+                                <rect key="frame" x="306.66666666666669" y="134" width="20" height="20"/>
                                 <color key="backgroundColor" systemColor="systemBlueColor"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="20" id="ph9-B2-QB7"/>
+                                    <constraint firstAttribute="height" constant="20" id="rGU-QJ-n9z"/>
+                                </constraints>
                                 <fontDescription key="fontDescription" type="boldSystem" pointSize="12"/>
                                 <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <nil key="highlightedColor"/>
@@ -381,22 +391,20 @@
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <color key="tintColor" red="0.15294117647058825" green="0.3529411764705882" blue="0.4392156862745098" alpha="0.84705882352941175" colorSpace="calibratedRGB"/>
                         <constraints>
-                            <constraint firstItem="s2H-9v-p1Y" firstAttribute="leading" secondItem="5ah-7a-XAT" secondAttribute="trailing" constant="5" id="1ip-1z-8Ee"/>
-                            <constraint firstItem="0sZ-Lo-jv1" firstAttribute="top" secondItem="n5p-iA-UmA" secondAttribute="bottom" constant="5" id="7Mi-iF-wW7"/>
-                            <constraint firstItem="5ah-7a-XAT" firstAttribute="leading" secondItem="xev-2H-8kH" secondAttribute="trailing" constant="151.33000000000001" id="Hym-dp-087"/>
+                            <constraint firstItem="0sZ-Lo-jv1" firstAttribute="top" secondItem="n5p-iA-UmA" secondAttribute="bottom" constant="15" id="7Mi-iF-wW7"/>
                             <constraint firstItem="xev-2H-8kH" firstAttribute="leading" secondItem="upJ-nU-B4z" secondAttribute="leading" constant="30" id="IPt-QL-Mbh"/>
                             <constraint firstItem="0sZ-Lo-jv1" firstAttribute="centerX" secondItem="wzh-Wg-1Bf" secondAttribute="centerX" id="QGg-uI-62h"/>
                             <constraint firstItem="xev-2H-8kH" firstAttribute="top" secondItem="upJ-nU-B4z" secondAttribute="top" constant="15" id="QzZ-2a-cdU"/>
-                            <constraint firstItem="s2H-9v-p1Y" firstAttribute="leading" secondItem="n5p-iA-UmA" secondAttribute="trailing" id="SlF-pc-kC5"/>
+                            <constraint firstItem="s2H-9v-p1Y" firstAttribute="leading" secondItem="n5p-iA-UmA" secondAttribute="trailing" constant="15" id="SlF-pc-kC5"/>
                             <constraint firstItem="n5p-iA-UmA" firstAttribute="top" secondItem="upJ-nU-B4z" secondAttribute="top" constant="15" id="XUh-lF-Th0"/>
                             <constraint firstItem="upJ-nU-B4z" firstAttribute="trailing" secondItem="s2H-9v-p1Y" secondAttribute="trailing" constant="15" id="Xah-g5-Uca"/>
                             <constraint firstItem="0sZ-Lo-jv1" firstAttribute="leading" secondItem="upJ-nU-B4z" secondAttribute="leading" constant="30" id="d9P-C8-OgD"/>
                             <constraint firstItem="s2H-9v-p1Y" firstAttribute="top" secondItem="upJ-nU-B4z" secondAttribute="top" constant="15" id="fWJ-X0-7Cy"/>
                             <constraint firstItem="bpI-Py-YhW" firstAttribute="top" secondItem="n5p-iA-UmA" secondAttribute="bottom" constant="5" id="hDt-xZ-mFl"/>
                             <constraint firstItem="upJ-nU-B4z" firstAttribute="trailing" secondItem="bpI-Py-YhW" secondAttribute="trailing" constant="50" id="rRU-ob-9CZ"/>
-                            <constraint firstItem="s2H-9v-p1Y" firstAttribute="leading" secondItem="5ah-7a-XAT" secondAttribute="trailing" constant="5" id="xdo-jR-ZE4"/>
+                            <constraint firstItem="s2H-9v-p1Y" firstAttribute="leading" secondItem="5ah-7a-XAT" secondAttribute="trailing" constant="10" id="xdo-jR-ZE4"/>
                             <constraint firstItem="upJ-nU-B4z" firstAttribute="trailing" secondItem="0sZ-Lo-jv1" secondAttribute="trailing" constant="30" id="ye0-Zq-IPo"/>
-                            <constraint firstItem="5ah-7a-XAT" firstAttribute="top" secondItem="upJ-nU-B4z" secondAttribute="top" constant="15" id="zfB-35-dxH"/>
+                            <constraint firstItem="5ah-7a-XAT" firstAttribute="top" secondItem="upJ-nU-B4z" secondAttribute="top" constant="10" id="zfB-35-dxH"/>
                         </constraints>
                     </view>
                     <connections>
@@ -712,7 +720,7 @@
         </scene>
     </scenes>
     <inferredMetricsTieBreakers>
-        <segue reference="aTn-dt-nue"/>
+        <segue reference="22f-eQ-dnj"/>
     </inferredMetricsTieBreakers>
     <resources>
         <image name="bell.fill" catalog="system" width="123" height="128"/>
