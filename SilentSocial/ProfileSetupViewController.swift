@@ -11,7 +11,7 @@ import UIKit
 import FirebaseAuth
 import FirebaseFirestore
 
-class ProfileSetupViewController: UIViewController {
+class ProfileSetupViewController: UIViewController, UITextFieldDelegate {
 
     // Firebase properties
     let db = Firestore.firestore()
@@ -31,6 +31,10 @@ class ProfileSetupViewController: UIViewController {
         // Set placeholders for textfields
         usernameSetTextField.placeholder = "Unique Username (e.g., JohnD_444)"
         displayNameSetTextField.placeholder = "Display name (e.g., John Doe)"
+
+        // Set up to let keyboard dismiss work
+        usernameSetTextField.delegate = self
+        displayNameSetTextField.delegate = self
         
         // Set error label to nothing
         errorLabel.text = ""
@@ -110,5 +114,13 @@ class ProfileSetupViewController: UIViewController {
             return
         }
     }
-    
+   // Called when 'return' key pressed
+    func textFieldShouldReturn(_ textField:UITextField) -> Bool {
+        textField.resignFirstResponder()
+        return true
+    }
+    // Called when the user clicks on the view outside of the UITextField
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        self.view.endEditing(true)
+    }    
 }
