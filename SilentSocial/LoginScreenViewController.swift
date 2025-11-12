@@ -42,8 +42,7 @@ class LoginScreenViewController: UIViewController, UITextFieldDelegate {
         Auth.auth().addStateDidChangeListener() { (auth, user) in
             // Remove login fields upon login
             if user != nil {
-                // Segue to dashboard page if login is successful
-                self.performSegue(withIdentifier: "loginSegue", sender: nil)
+                self.presentMainTabs()
                 self.userLoginTextField.text = nil
                 self.passwordLoginTextField.text = nil
             }
@@ -74,4 +73,33 @@ class LoginScreenViewController: UIViewController, UITextFieldDelegate {
     }
     
 
+}
+
+extension LoginScreenViewController {
+    private func presentMainTabs() {
+        let sb = UIStoryboard(name: "Main", bundle: nil)
+        guard let home = sb.instantiateViewController(withIdentifier: "DashboardViewController") as? DashboardViewController,
+              let profile = sb.instantiateViewController(withIdentifier: "ProfileViewController") as? ProfileViewController,
+              let settings = sb.instantiateViewController(withIdentifier: "SettingsTableViewController") as? SettingsTableViewController
+        else {
+            return
+        }
+
+        home.title = "Home"
+        profile.title = "Profile"
+        settings.title = "Setting"
+
+        let homeNav = UINavigationController(rootViewController: home)
+        let profileNav = UINavigationController(rootViewController: profile)
+        let settingsNav = UINavigationController(rootViewController: settings)
+
+        homeNav.tabBarItem = UITabBarItem(title: "Home", image: UIImage(systemName: "house"), selectedImage: UIImage(systemName: "house.fill"))
+        profileNav.tabBarItem = UITabBarItem(title: "Profile", image: UIImage(systemName: "person"), selectedImage: UIImage(systemName: "person.fill"))
+        settingsNav.tabBarItem = UITabBarItem(title: "Setting", image: UIImage(systemName: "gearshape"), selectedImage: UIImage(systemName: "gearshape.fill"))
+
+        let tabs = UITabBarController()
+        tabs.viewControllers = [homeNav, profileNav, settingsNav]
+        tabs.modalPresentationStyle = .fullScreen
+        present(tabs, animated: true)
+    }
 }
