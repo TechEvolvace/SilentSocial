@@ -160,8 +160,8 @@ class DashboardViewController: UIViewController {
         // Button tints
         notificationButton.tintColor = UIColor(hex: "#275A7")
         settingsButton.tintColor = UIColor(hex: "#2C3331")
-        settingsButton.isHidden = true
-        settingsButton.isEnabled = false
+        settingsButton.isHidden = false
+        settingsButton.isEnabled = true
         
         // Tap gesture to dismiss dropdown
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTapOutside(_:)))
