@@ -2,16 +2,11 @@
 //  Names: Phuc Dinh, Nicholas Ng, Preston Tu, Rui Xue
 //  Course: CS329E
 //  LoginScreenViewController.swift
-//  SilentSocial
-//
-//  Created by Nicholas Gia-Bao Ng on 10/14/25.
-//
 
 import UIKit
 // Import for login functionalities
 import FirebaseAuth
 import FirebaseFirestore
-
 
 class LoginScreenViewController: UIViewController, UITextFieldDelegate {
     // Initial Screen that pops up for login

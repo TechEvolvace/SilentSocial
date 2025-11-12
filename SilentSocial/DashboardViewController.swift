@@ -2,7 +2,6 @@
 // Names: Phuc Dinh, Nicholas Ng, Preston Tu, Rui Xue
 // Course: CS329E
 // DashboardViewController.swift
-// SilentSocial
 
 import UIKit
 
@@ -112,7 +111,7 @@ class DashboardViewController: UIViewController {
         setupNotificationTableView()
         loadInitialNotifications()
         updateBadgeCount()
-        setupContentSections() // <- NEW
+        setupContentSections()
     }
     
     override func viewDidLayoutSubviews() {
