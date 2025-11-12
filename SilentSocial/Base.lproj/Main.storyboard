@@ -426,7 +426,7 @@
         <!--Profile View Controller-->
         <scene sceneID="ZrI-wI-zxG">
             <objects>
-                <viewController id="296-PX-vNq" customClass="ProfileViewController" customModule="SilentSocial" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="ProfileViewController" id="296-PX-vNq" customClass="ProfileViewController" customModule="SilentSocial" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="Dn8-Vo-9je">
                         <rect key="frame" x="0.0" y="0.0" width="440" height="884"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -568,7 +568,7 @@
         <!--Settings Table View Controller-->
         <scene sceneID="Isv-x0-XaD">
             <objects>
-                <tableViewController wantsFullScreenLayout="YES" id="23j-h8-FGI" customClass="SettingsTableViewController" customModule="SilentSocial" customModuleProvider="target" sceneMemberID="viewController">
+                <tableViewController storyboardIdentifier="SettingsTableViewController" wantsFullScreenLayout="YES" id="23j-h8-FGI" customClass="SettingsTableViewController" customModule="SilentSocial" customModuleProvider="target" sceneMemberID="viewController">
                     <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="static" style="insetGrouped" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="18" estimatedSectionHeaderHeight="-1" sectionFooterHeight="18" estimatedSectionFooterHeight="-1" id="dEf-hA-Zgk">
                         <rect key="frame" x="0.0" y="0.0" width="440" height="884"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
