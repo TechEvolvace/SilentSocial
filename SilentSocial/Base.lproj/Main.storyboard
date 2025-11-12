@@ -305,13 +305,7 @@
                         <viewLayoutGuide key="safeArea" id="EAH-Dy-IeJ"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                     </view>
-                    <navigationItem key="navigationItem" id="OB4-DA-vd1">
-                        <barButtonItem key="rightBarButtonItem" title="Settings" style="plain" id="TYg-BS-dlW">
-                            <connections>
-                                <segue destination="23j-h8-FGI" kind="show" identifier="showSettings" id="bfk-uE-8Do"/>
-                            </connections>
-                        </barButtonItem>
-                    </navigationItem>
+                    <navigationItem key="navigationItem" id="OB4-DA-vd1"/>
                     <connections>
                         <outlet property="goToDashboardButton" destination="8GF-oS-m4j" id="gWD-El-f0h"/>
                     </connections>
@@ -838,7 +832,6 @@
     </scenes>
     <inferredMetricsTieBreakers>
         <segue reference="22f-eQ-dnj"/>
-        <segue reference="h4N-Kg-mES"/>
     </inferredMetricsTieBreakers>
     <resources>
         <image name="bell.fill" catalog="system" width="123" height="128"/>
