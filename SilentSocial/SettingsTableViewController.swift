@@ -1,9 +1,7 @@
-//
+//  Project: SilentSocial
+//  Names: Phuc Dinh, Nicholas Ng, Preston Tu, Rui Xue
+//  Course: CS329E
 //  SettingsTableViewController.swift
-//  SilentSocial
-//
-//  Created by Preston Tu on 10/20/25.
-//
 
 import UIKit
 import FirebaseAuth
@@ -53,7 +51,6 @@ final class SettingsTableViewController: UITableViewController {
     }
 
     // Actions
-
     private func sendPasswordReset() {
         guard let email = Auth.auth().currentUser?.email else {
             showInfo("Error", "No email on file for this account.")
@@ -116,7 +113,6 @@ final class SettingsTableViewController: UITableViewController {
     }
 
     // Helper
-
     private func showInfo(_ title: String, _ message: String) {
         let a = UIAlertController(title: title, message: message, preferredStyle: .alert)
         a.addAction(UIAlertAction(title: "OK", style: .default))

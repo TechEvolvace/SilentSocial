@@ -2,7 +2,6 @@
 // Names: Phuc Dinh, Nicholas Ng, Preston Tu, Rui Xue
 // Course: CS329E
 // DashboardViewController.swift
-// SilentSocial
 
 import UIKit
 
@@ -36,13 +35,15 @@ class DashboardViewController: UIViewController {
     private lazy var addToGalleryButton: UIButton = {
         let b = UIButton(type: .system)
         b.setImage(UIImage(systemName: "plus"), for: .normal)
-        b.tintColor = .white
-        b.backgroundColor = UIColor(hex: "#2C3331")
-        b.layer.cornerRadius = 16
-        b.widthAnchor.constraint(equalToConstant: 32).isActive = true
-        b.heightAnchor.constraint(equalToConstant: 32).isActive = true
-        b.addTarget(self, action: #selector(addToGalleryTapped), for: .touchUpInside)
-        b.accessibilityLabel = "Add to Gallery"
+        b.tintColor = UIColor(hex: "#2C3331")
+        b.backgroundColor = .white
+        b.layer.cornerRadius = 22
+        b.layer.borderWidth = 2
+        b.layer.borderColor = UIColor(hex: "#2C3331").cgColor
+        b.widthAnchor.constraint(equalToConstant: 44).isActive = true
+        b.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        b.addTarget(self, action: #selector(addPostTapped), for: .touchUpInside)
+        b.accessibilityLabel = "Add Post"
         return b
     }()
     private var galleryCollectionView: UICollectionView!
@@ -83,7 +84,10 @@ class DashboardViewController: UIViewController {
         .init(title: "Morning Ride", mood: "🧘‍♂️ Calm", date: Date()),
         .init(title: "Campus Sunset", mood: "🌅 Chill", date: Date()),
         .init(title: "Studio Jam", mood: "🎧 Focus", date: Date()),
-        .init(title: "Coffee Time", mood: "☕️ Cozy", date: Date())
+        .init(title: "Coffee Time", mood: "☕️ Cozy", date: Date()),
+        .init(title: "Weekend Sketch", mood: "✏️ Creative", date: Date()),
+        .init(title: "Gallery Walk", mood: "🖼️ Artsy", date: Date()),
+        .init(title: "Quiet Night", mood: "🌙 Calm", date: Date())
     ]
     
     private var smallEmojiItems: [SmallItem] = (0..<12).map { _ in SmallItem(text: "🙂") }
@@ -102,11 +106,12 @@ class DashboardViewController: UIViewController {
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
+        definesPresentationContext = true
         setupUI()
         setupNotificationTableView()
         loadInitialNotifications()
         updateBadgeCount()
-        setupContentSections() // <- NEW
+        setupContentSections()
     }
     
     override func viewDidLayoutSubviews() {
@@ -128,7 +133,7 @@ class DashboardViewController: UIViewController {
         // Message label
         messageLabel.text = "Start your journey with SilentSocial!"
         messageLabel.font = UIFont.systemFont(ofSize: 18, weight: .regular)
-        messageLabel.textColor = UIColor(hex: "#2C3331")
+        messageLabel.textColor = .systemBlue
         messageLabel.textAlignment = .center
         messageLabel.numberOfLines = 0
         
@@ -144,7 +149,7 @@ class DashboardViewController: UIViewController {
         
         // Badge label styling
         badgeLabel.isHidden = true
-        badgeLabel.backgroundColor = UIColor(hex: "#275A7")
+        badgeLabel.backgroundColor = .systemBlue
         badgeLabel.textColor = .white
         badgeLabel.font = UIFont.systemFont(ofSize: 12, weight: .bold)
         badgeLabel.layer.cornerRadius = 10
@@ -154,6 +159,8 @@ class DashboardViewController: UIViewController {
         // Button tints
         notificationButton.tintColor = UIColor(hex: "#275A7")
         settingsButton.tintColor = UIColor(hex: "#2C3331")
+        settingsButton.isHidden = false
+        settingsButton.isEnabled = true
         
         // Tap gesture to dismiss dropdown
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTapOutside(_:)))
@@ -214,72 +221,18 @@ class DashboardViewController: UIViewController {
         galleryHeader.spacing = 12
         contentStack.addArrangedSubview(galleryHeader)
         
-        // ---- Gallery (Responsive ~1.3–1.6 visible) ----
-        galleryCollectionView = UICollectionView(frame: .zero, collectionViewLayout: Self.makeResponsiveGalleryLayout())
+        // ---- Gallery (Masonry three-row pattern with dynamic sizes) ----
+        galleryCollectionView = UICollectionView(frame: .zero, collectionViewLayout: Self.makeMasonryPatternGalleryLayout())
         galleryCollectionView.backgroundColor = .clear
         galleryCollectionView.showsHorizontalScrollIndicator = false
         galleryCollectionView.register(GalleryCell.self, forCellWithReuseIdentifier: GalleryCell.reuseID)
         galleryCollectionView.dataSource = self
         galleryCollectionView.delegate = self
         galleryCollectionView.contentInset = UIEdgeInsets(top: 0, left: 4, bottom: 0, right: 4)
-        galleryCollectionView.heightAnchor.constraint(greaterThanOrEqualToConstant: 160).isActive = true // min, actual from layout
+        galleryCollectionView.heightAnchor.constraint(greaterThanOrEqualToConstant: 520).isActive = true // fits 3 rows comfortably
         contentStack.addArrangedSubview(galleryCollectionView)
-        
-        // ---- Emoji (adaptive horizontal strip) ----
-        contentStack.addArrangedSubview(emojiTitleLabel)
-        emojiCollectionView = UICollectionView(frame: .zero, collectionViewLayout: Self.makeAdaptiveStripLayout(itemWidth: 78, height: 92))
-        emojiCollectionView.backgroundColor = .clear
-        emojiCollectionView.showsHorizontalScrollIndicator = false
-        emojiCollectionView.register(SmallItemCell.self, forCellWithReuseIdentifier: SmallItemCell.reuseID)
-        emojiCollectionView.dataSource = self
-        emojiCollectionView.delegate = self
-        emojiCollectionView.contentInset = UIEdgeInsets(top: 0, left: 2, bottom: 0, right: 2)
-        emojiCollectionView.heightAnchor.constraint(equalToConstant: 92).isActive = true
-        contentStack.addArrangedSubview(emojiCollectionView)
-        
-        // ---- Images ----
-        contentStack.addArrangedSubview(imagesTitleLabel)
-        imagesCollectionView = UICollectionView(frame: .zero, collectionViewLayout: Self.makeAdaptiveStripLayout(itemWidth: 78, height: 92))
-        imagesCollectionView.backgroundColor = .clear
-        imagesCollectionView.showsHorizontalScrollIndicator = false
-        imagesCollectionView.register(SmallItemCell.self, forCellWithReuseIdentifier: SmallItemCell.reuseID)
-        imagesCollectionView.dataSource = self
-        imagesCollectionView.delegate = self
-        imagesCollectionView.contentInset = UIEdgeInsets(top: 0, left: 2, bottom: 0, right: 2)
-        imagesCollectionView.heightAnchor.constraint(equalToConstant: 92).isActive = true
-        contentStack.addArrangedSubview(imagesCollectionView)
-        
-        // ---- Sketches ----
-        contentStack.addArrangedSubview(sketchesTitleLabel)
-        sketchesCollectionView = UICollectionView(frame: .zero, collectionViewLayout: Self.makeAdaptiveStripLayout(itemWidth: 78, height: 92))
-        sketchesCollectionView.backgroundColor = .clear
-        sketchesCollectionView.showsHorizontalScrollIndicator = false
-        sketchesCollectionView.register(SmallItemCell.self, forCellWithReuseIdentifier: SmallItemCell.reuseID)
-        sketchesCollectionView.dataSource = self
-        sketchesCollectionView.delegate = self
-        sketchesCollectionView.contentInset = UIEdgeInsets(top: 0, left: 2, bottom: 0, right: 2)
-        sketchesCollectionView.heightAnchor.constraint(equalToConstant: 92).isActive = true
-        contentStack.addArrangedSubview(sketchesCollectionView)
-        
-        // ---- Posts header (title + "+") ----
-        let postsHeader = UIStackView(arrangedSubviews: [postsTitleLabel, UIView(), addPostButton])
-        postsHeader.axis = .horizontal
-        postsHeader.alignment = .center
-        postsHeader.spacing = 12
-        contentStack.addArrangedSubview(postsHeader)
-        
-        // ---- Posts (adaptive grid, comfy spacing top/bottom) ----
-        postsCollectionView = UICollectionView(frame: .zero, collectionViewLayout: Self.makeAdaptivePostsLayout())
-        postsCollectionView.backgroundColor = .clear
-        postsCollectionView.showsVerticalScrollIndicator = false
-        postsCollectionView.register(PostCell.self, forCellWithReuseIdentifier: PostCell.reuseID)
-        postsCollectionView.dataSource = self
-        postsCollectionView.delegate = self
-        postsCollectionView.contentInset = UIEdgeInsets(top: 6, left: 0, bottom: 16, right: 0)
-        postsCollectionView.heightAnchor.constraint(greaterThanOrEqualToConstant: 520).isActive = true
-        contentStack.addArrangedSubview(postsCollectionView)
-        
-        // Extra breathing room below posts
+
+        // Spacer below gallery
         let spacer = UIView()
         spacer.translatesAutoresizingMaskIntoConstraints = false
         spacer.heightAnchor.constraint(equalToConstant: 12).isActive = true
@@ -341,9 +294,23 @@ class DashboardViewController: UIViewController {
     }
     
     @objc private func addPostTapped() {
-        let new = PostItem(id: UUID().uuidString, title: "New Post \(postItems.count + 1)", liked: false)
-        postItems.insert(new, at: 0)
-        postsCollectionView.reloadData()
+        let ac = UIAlertController(title: "Create a post!", message: nil, preferredStyle: .actionSheet)
+        ac.addAction(UIAlertAction(title: "Image", style: .default, handler: { _ in
+            let a = UIAlertController(title: "Coming Soon", message: "Image post creation will be available soon.", preferredStyle: .alert)
+            a.addAction(UIAlertAction(title: "OK", style: .default))
+            self.present(a, animated: true)
+        }))
+        ac.addAction(UIAlertAction(title: "Sketch", style: .default, handler: { _ in
+            let a = UIAlertController(title: "Coming Soon", message: "Sketch post creation will be available soon.", preferredStyle: .alert)
+            a.addAction(UIAlertAction(title: "OK", style: .default))
+            self.present(a, animated: true)
+        }))
+        ac.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        if let pop = ac.popoverPresentationController {
+            pop.sourceView = addToGalleryButton
+            pop.sourceRect = addToGalleryButton.bounds
+        }
+        present(ac, animated: true)
     }
     
     // MARK: - Notification Management
@@ -388,54 +355,28 @@ extension DashboardViewController: UICollectionViewDataSource, UICollectionViewD
     func numberOfSections(in collectionView: UICollectionView) -> Int { 1 }
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        switch collectionView {
-        case galleryCollectionView: return galleryItems.count
-        case emojiCollectionView: return smallEmojiItems.count
-        case imagesCollectionView: return smallImageItems.count
-        case sketchesCollectionView: return smallSketchItems.count
-        case postsCollectionView: return postItems.count
-        default: return 0
-        }
+        if collectionView == galleryCollectionView { return galleryItems.count }
+        return 0
     }
     
     func collectionView(_ collectionView: UICollectionView,
                         cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        if collectionView == galleryCollectionView {
-            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: GalleryCell.reuseID, for: indexPath) as! GalleryCell
-            cell.configure(with: galleryItems[indexPath.item])
-            return cell
-        }
-        if collectionView == postsCollectionView {
-            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: PostCell.reuseID, for: indexPath) as! PostCell
-            let post = postItems[indexPath.item]
-            cell.configure(with: post)
-            cell.onToggleLike = { [weak self, weak collectionView] in
-                guard let self = self, let cv = collectionView else { return }
-                self.postItems[indexPath.item].liked.toggle()
-                cv.reloadItems(at: [indexPath])
-            }
-            return cell
-        }
-        // small strips (Emoji / Images / Sketches)
-        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: SmallItemCell.reuseID, for: indexPath) as! SmallItemCell
-        if collectionView == emojiCollectionView {
-            cell.configure(with: smallEmojiItems[indexPath.item])
-        } else if collectionView == imagesCollectionView {
-            cell.configure(with: smallImageItems[indexPath.item])
-        } else {
-            cell.configure(with: smallSketchItems[indexPath.item])
-        }
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: GalleryCell.reuseID, for: indexPath) as! GalleryCell
+        cell.configure(with: galleryItems[indexPath.item])
         return cell
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        // Big preview for Emoji / Images / Sketches taps
-        if collectionView == emojiCollectionView {
-            presentPreview(title: "Emoji", contentText: smallEmojiItems[indexPath.item].text)
-        } else if collectionView == imagesCollectionView {
-            presentPreview(title: "Image", contentText: smallImageItems[indexPath.item].text)
-        } else if collectionView == sketchesCollectionView {
-            presentPreview(title: "Sketch", contentText: smallSketchItems[indexPath.item].text)
+        if collectionView == galleryCollectionView {
+            let detail = PostDetailViewController(
+                name: "Andy Finn",
+                location: "University of Texas at Austin",
+                emojiCaption: "😍 ❤️ 😘 🤣 ❤️ 😘 ❤️ 😘",
+                date: galleryItems[indexPath.item].date
+            )
+            detail.modalPresentationStyle = .overCurrentContext
+            detail.modalTransitionStyle = .crossDissolve
+            present(detail, animated: true)
         }
     }
 }
@@ -448,6 +389,64 @@ extension DashboardViewController {
         l.font = .systemFont(ofSize: 18, weight: .semibold)
         l.textColor = UIColor(hex: "#2C3331")
         return l
+    }
+    
+    // Gallery: masonry layout pattern 1) 1x full-width, 2) 2x half, 3) 30/70 split
+    static func makeMasonryPatternGalleryLayout() -> UICollectionViewCompositionalLayout {
+        let layout = UICollectionViewCompositionalLayout { _, env in
+            let width = env.container.effectiveContentSize.width
+            let basePadding: CGFloat = 8
+            let rowSpacing: CGFloat = 12
+
+            // Dynamic heights based on container width for responsive feel
+            let fullHeight = max(180, min(260, width * 0.35))
+            let halfHeight = max(140, min(200, width * 0.26))
+            let splitHeight = max(140, min(200, width * 0.26))
+
+            // Row 1: one full-width item
+            let r1ItemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0),
+                                                    heightDimension: .absolute(fullHeight))
+            let r1Item = NSCollectionLayoutItem(layoutSize: r1ItemSize)
+            r1Item.contentInsets = .init(top: basePadding, leading: basePadding, bottom: basePadding, trailing: basePadding)
+            let r1GroupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0),
+                                                     heightDimension: .absolute(fullHeight + basePadding * 2))
+            let r1Group = NSCollectionLayoutGroup.horizontal(layoutSize: r1GroupSize, subitems: [r1Item])
+
+            // Row 2: two equal halves
+            let r2ItemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.5),
+                                                    heightDimension: .absolute(halfHeight))
+            let r2Item = NSCollectionLayoutItem(layoutSize: r2ItemSize)
+            r2Item.contentInsets = .init(top: basePadding, leading: basePadding, bottom: basePadding, trailing: basePadding)
+            let r2GroupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0),
+                                                     heightDimension: .absolute(halfHeight + basePadding * 2))
+            let r2Group = NSCollectionLayoutGroup.horizontal(layoutSize: r2GroupSize, subitems: [r2Item, r2Item])
+
+            // Row 3: 30% / 70% split
+            let leftItemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.3),
+                                                      heightDimension: .absolute(splitHeight))
+            let rightItemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.7),
+                                                       heightDimension: .absolute(splitHeight))
+            let leftItem = NSCollectionLayoutItem(layoutSize: leftItemSize)
+            let rightItem = NSCollectionLayoutItem(layoutSize: rightItemSize)
+            leftItem.contentInsets = .init(top: basePadding, leading: basePadding, bottom: basePadding, trailing: basePadding)
+            rightItem.contentInsets = .init(top: basePadding, leading: basePadding, bottom: basePadding, trailing: basePadding)
+            let r3GroupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0),
+                                                     heightDimension: .absolute(splitHeight + basePadding * 2))
+            let r3Group = NSCollectionLayoutGroup.horizontal(layoutSize: r3GroupSize, subitems: [leftItem, rightItem])
+
+            // Outer vertical group combines the three rows to form a repeating pattern of 5 items
+            let outerHeight = fullHeight + halfHeight + splitHeight + basePadding * 6 + rowSpacing * 2
+            let outerSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0),
+                                                   heightDimension: .absolute(outerHeight))
+            let outerGroup = NSCollectionLayoutGroup.vertical(layoutSize: outerSize, subitems: [r1Group, r2Group, r3Group])
+
+            let section = NSCollectionLayoutSection(group: outerGroup)
+            section.interGroupSpacing = rowSpacing
+            section.contentInsets = .init(top: 0, leading: 0, bottom: 0, trailing: 0)
+            section.orthogonalScrollingBehavior = .none
+            return section
+        }
+        return layout
     }
     
     // Gallery: responsive width/height for comfy ~1.3–1.6 visible cards
@@ -556,6 +555,8 @@ final class GalleryCell: UICollectionViewCell {
     private let titleLabel = UILabel()
     private let moodLabel = UILabel()
     private let dateLabel = UILabel()
+    private let profileBadge = UIView()
+    private let profileIcon = UIImageView()
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -574,16 +575,31 @@ final class GalleryCell: UICollectionViewCell {
         
         titleLabel.font = .systemFont(ofSize: 16, weight: .semibold)
         moodLabel.font = .systemFont(ofSize: 14, weight: .regular)
-        dateLabel.font = .systemFont(ofSize: 12, weight: .medium)
+        dateLabel.font = .systemFont(ofSize: 14, weight: .medium)
         titleLabel.textColor = UIColor(hex: "#2C3331")
         moodLabel.textColor = UIColor(hex: "#2C3331")
-        dateLabel.textColor = UIColor(hex: "#6B7280")
+        dateLabel.textColor = UIColor(hex: "#2C3331")
+        titleLabel.isHidden = true
+        moodLabel.isHidden = true
         
-        let vstack = UIStackView(arrangedSubviews: [titleLabel, moodLabel, dateLabel])
+        let vstack = UIStackView(arrangedSubviews: [dateLabel])
         vstack.axis = .vertical
         vstack.spacing = 4
         vstack.translatesAutoresizingMaskIntoConstraints = false
         card.addSubview(vstack)
+        
+        // Profile badge overlay (top-right)
+        profileBadge.translatesAutoresizingMaskIntoConstraints = false
+        profileBadge.backgroundColor = .white
+        profileBadge.layer.cornerRadius = 22
+        profileBadge.layer.borderWidth = 2
+        profileBadge.layer.borderColor = UIColor(hex: "#2C3331").cgColor
+        card.addSubview(profileBadge)
+        
+        profileIcon.translatesAutoresizingMaskIntoConstraints = false
+        profileIcon.image = UIImage(systemName: "person")
+        profileIcon.tintColor = UIColor(hex: "#2C3331")
+        profileBadge.addSubview(profileIcon)
         
         NSLayoutConstraint.activate([
             card.topAnchor.constraint(equalTo: contentView.topAnchor),
@@ -594,15 +610,21 @@ final class GalleryCell: UICollectionViewCell {
             vstack.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 12),
             vstack.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -12),
             vstack.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -12),
-            vstack.topAnchor.constraint(greaterThanOrEqualTo: card.topAnchor, constant: 12)
+            vstack.topAnchor.constraint(greaterThanOrEqualTo: card.topAnchor, constant: 12),
+            
+            profileBadge.widthAnchor.constraint(equalToConstant: 44),
+            profileBadge.heightAnchor.constraint(equalToConstant: 44),
+            profileBadge.topAnchor.constraint(equalTo: card.topAnchor, constant: 12),
+            profileBadge.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -12),
+            profileIcon.centerXAnchor.constraint(equalTo: profileBadge.centerXAnchor),
+            profileIcon.centerYAnchor.constraint(equalTo: profileBadge.centerYAnchor)
         ])
     }
     
     func configure(with item: GalleryItem) {
-        titleLabel.text = item.title
-        moodLabel.text = item.mood
         let df = DateFormatter()
-        df.dateStyle = .medium
+        df.locale = Locale.current
+        df.dateFormat = "MMM. d, yyyy"
         dateLabel.text = df.string(from: item.date)
     }
 }
@@ -789,6 +811,168 @@ final class ModalPreviewController: UIViewController {
         ])
         
         // tap outside to close
+        let tap = UITapGestureRecognizer(target: self, action: #selector(dismissSelf))
+        view.addGestureRecognizer(tap)
+    }
+    
+    @objc private func dismissSelf() { dismiss(animated: true) }
+}
+
+// MARK: - Post Detail (modal)
+final class PostDetailViewController: UIViewController {
+    private let name: String
+    private let location: String
+    private let emojiCaption: String
+    private let date: Date
+    
+    init(name: String, location: String, emojiCaption: String, date: Date) {
+        self.name = name
+        self.location = location
+        self.emojiCaption = emojiCaption
+        self.date = date
+        super.init(nibName: nil, bundle: nil)
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = .clear
+        let blur = UIVisualEffectView(effect: UIBlurEffect(style: .systemMaterial))
+        blur.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(blur)
+        
+        let container = UIView()
+        container.translatesAutoresizingMaskIntoConstraints = false
+        container.backgroundColor = .white
+        container.layer.cornerRadius = 16
+        container.layer.borderWidth = 1
+        container.layer.borderColor = UIColor(hex: "#E5E7EB").cgColor
+        view.addSubview(container)
+        
+        let headerImage = UIView()
+        headerImage.translatesAutoresizingMaskIntoConstraints = false
+        headerImage.backgroundColor = UIColor(hex: "#D1D5DB")
+        headerImage.layer.cornerRadius = 12
+        headerImage.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        
+        let avatarBadge = UIView()
+        avatarBadge.translatesAutoresizingMaskIntoConstraints = false
+        avatarBadge.backgroundColor = .white
+        avatarBadge.layer.cornerRadius = 18
+        avatarBadge.layer.borderWidth = 2
+        avatarBadge.layer.borderColor = UIColor(hex: "#2C3331").cgColor
+        
+        let avatarIcon = UIImageView(image: UIImage(systemName: "person"))
+        avatarIcon.translatesAutoresizingMaskIntoConstraints = false
+        avatarIcon.tintColor = UIColor(hex: "#2C3331")
+        
+        avatarBadge.addSubview(avatarIcon)
+        
+        let nameLabel = UILabel()
+        nameLabel.translatesAutoresizingMaskIntoConstraints = false
+        nameLabel.text = name
+        nameLabel.font = .systemFont(ofSize: 20, weight: .bold)
+        nameLabel.textColor = UIColor(hex: "#2C3331")
+        
+        let locationLabel = UILabel()
+        locationLabel.translatesAutoresizingMaskIntoConstraints = false
+        locationLabel.textColor = UIColor(hex: "#2C3331")
+        locationLabel.font = .systemFont(ofSize: 14, weight: .regular)
+        locationLabel.text = "\u{1F4CC} " + location
+        
+        let nameStack = UIStackView(arrangedSubviews: [nameLabel, locationLabel])
+        nameStack.translatesAutoresizingMaskIntoConstraints = false
+        nameStack.axis = .vertical
+        nameStack.spacing = 2
+        
+        let headerStack = UIStackView(arrangedSubviews: [avatarBadge, nameStack])
+        headerStack.translatesAutoresizingMaskIntoConstraints = false
+        headerStack.axis = .horizontal
+        headerStack.spacing = 12
+        headerStack.alignment = .center
+        
+        let emojiLabel = UILabel()
+        emojiLabel.translatesAutoresizingMaskIntoConstraints = false
+        emojiLabel.text = emojiCaption
+        emojiLabel.font = .systemFont(ofSize: 20, weight: .regular)
+
+        let closeBtn = UIButton(type: .system)
+        closeBtn.translatesAutoresizingMaskIntoConstraints = false
+        closeBtn.setImage(UIImage(systemName: "xmark.circle.fill"), for: .normal)
+        closeBtn.tintColor = UIColor(hex: "#2C3331")
+        closeBtn.addTarget(self, action: #selector(dismissSelf), for: .touchUpInside)
+        
+        let dateLabel = UILabel()
+        dateLabel.translatesAutoresizingMaskIntoConstraints = false
+        let df = DateFormatter()
+        df.locale = Locale.current
+        df.dateFormat = "MMM. d, yyyy"
+        dateLabel.text = df.string(from: date)
+        dateLabel.font = .systemFont(ofSize: 14, weight: .medium)
+        dateLabel.textColor = UIColor(hex: "#2C3331")
+        
+        let dotsContainer = UIStackView()
+        dotsContainer.translatesAutoresizingMaskIntoConstraints = false
+        dotsContainer.axis = .horizontal
+        dotsContainer.spacing = 6
+        dotsContainer.alignment = .center
+        let dot1 = UIView()
+        dot1.translatesAutoresizingMaskIntoConstraints = false
+        dot1.backgroundColor = UIColor(hex: "#D1D5DB")
+        dot1.layer.cornerRadius = 4
+        let dot2 = UIView()
+        dot2.translatesAutoresizingMaskIntoConstraints = false
+        dot2.backgroundColor = UIColor(hex: "#9CA3AF")
+        dot2.layer.cornerRadius = 4
+        dotsContainer.addArrangedSubview(dot1)
+        dotsContainer.addArrangedSubview(dot2)
+        
+        let contentStack = UIStackView(arrangedSubviews: [headerImage, headerStack, emojiLabel])
+        contentStack.translatesAutoresizingMaskIntoConstraints = false
+        contentStack.axis = .vertical
+        contentStack.spacing = 12
+        
+        container.addSubview(contentStack)
+        container.addSubview(dateLabel)
+        container.addSubview(dotsContainer)
+        container.addSubview(closeBtn)
+        
+        NSLayoutConstraint.activate([
+            blur.topAnchor.constraint(equalTo: view.topAnchor),
+            blur.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            blur.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            blur.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            container.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            container.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 24),
+            container.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            container.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            
+            headerImage.heightAnchor.constraint(equalToConstant: 180),
+            
+            avatarBadge.widthAnchor.constraint(equalToConstant: 36),
+            avatarBadge.heightAnchor.constraint(equalToConstant: 36),
+            avatarIcon.centerXAnchor.constraint(equalTo: avatarBadge.centerXAnchor),
+            avatarIcon.centerYAnchor.constraint(equalTo: avatarBadge.centerYAnchor),
+            
+            contentStack.topAnchor.constraint(equalTo: container.topAnchor, constant: 12),
+            contentStack.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 12),
+            contentStack.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -12),
+
+            dateLabel.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -12),
+            dateLabel.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -18),
+
+            dotsContainer.centerXAnchor.constraint(equalTo: container.centerXAnchor),
+            dotsContainer.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -18),
+            dot1.widthAnchor.constraint(equalToConstant: 8),
+            dot1.heightAnchor.constraint(equalToConstant: 8),
+            dot2.widthAnchor.constraint(equalToConstant: 8),
+            dot2.heightAnchor.constraint(equalToConstant: 8),
+            closeBtn.topAnchor.constraint(equalTo: container.topAnchor, constant: 10),
+            closeBtn.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -10),
+            closeBtn.widthAnchor.constraint(equalToConstant: 28),
+            closeBtn.heightAnchor.constraint(equalToConstant: 28)
+        ])
+
         let tap = UITapGestureRecognizer(target: self, action: #selector(dismissSelf))
         view.addGestureRecognizer(tap)
     }

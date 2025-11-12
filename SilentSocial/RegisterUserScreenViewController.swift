@@ -2,10 +2,6 @@
 //  Names: Phuc Dinh, Nicholas Ng, Preston Tu, Rui Xue
 //  Course: CS329E
 //  RegisterUserScreenViewController.swift
-//  SilentSocial
-//
-//  Created by Nicholas Gia-Bao Ng on 10/14/25.
-//
 
 import UIKit
 import FirebaseAuth

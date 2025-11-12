@@ -2,7 +2,6 @@
 // Names: Phuc Dinh, Nicholas Ng, Preston Tu, Rui Xue
 // Course: CS329E
 // NotificationCell.swift
-// SilentSocial
 
 import UIKit
 

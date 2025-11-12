@@ -1,9 +1,8 @@
-//
+//  Project: SilentSocial
+//  Names: Phuc Dinh, Nicholas Ng, Preston Tu, Rui Xue
+//  Course: CS329E
 //  FirebaseService.swift
-//  SilentSocial
-//
-//  Created by Preston Tu on 10/20/25.
-//
+
 import Foundation
 import FirebaseAuth
 import FirebaseFirestore
