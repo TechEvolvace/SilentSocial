@@ -34,10 +34,12 @@ final class SettingsTableViewController: UITableViewController {
             performSegue(withIdentifier: "showProfileFromSettings", sender: nil)
 
         case .notifications:
-            showInfo("Coming Soon", "Notifications settings will be available in a later build.")
+            // Push the Notifications settings screen
+            performSegue(withIdentifier: "showNotificationsSettings", sender: nil)
 
         case .theme:
-            showInfo("Coming Soon", "Theme settings will be available in a later build.")
+            // Push the Theme settings screen
+            performSegue(withIdentifier: "showThemeSettings", sender: nil)
 
         case .changePassword:
             sendPasswordReset()
