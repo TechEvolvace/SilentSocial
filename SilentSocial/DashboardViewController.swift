@@ -7,7 +7,7 @@ import UIKit
 
 class DashboardViewController: UIViewController {
     
-    // MARK: - Outlets (existing)
+    // MARK: - Outlets
     @IBOutlet weak var welcomeLabel: UILabel!
     @IBOutlet weak var notificationButton: UIButton!
     @IBOutlet weak var settingsButton: UIButton!
@@ -16,10 +16,10 @@ class DashboardViewController: UIViewController {
     @IBOutlet weak var notificationTableView: UITableView!
     @IBOutlet weak var notificationContainerView: UIView!
     
-    // MARK: - Properties (existing)
+    // MARK: - Properties
     var notifications: [NotificationItem] = []
     var isNotificationMenuVisible = false
-    private var selectedImage: UIImage?     // Phuc's NEW changes
+    private var selectedImage: UIImage?     
     
     // MARK: - New UI: Containers & Collections
     private let contentScrollView = UIScrollView()
@@ -80,15 +80,15 @@ class DashboardViewController: UIViewController {
     }()
     private var postsCollectionView: UICollectionView!
     
-    // MARK: - New Data (mock/demo)
+    // MARK: - New Data used for a Mock demo
     private var galleryItems: [GalleryItem] = [
-        .init(title: "Morning Ride", mood: "🧘‍♂️ Calm", date: Date(), image: nil),         // Phuc's NEW changes
-        .init(title: "Campus Sunset", mood: "🌅 Chill", date: Date(), image: nil),       // Phuc's NEW changes
-        .init(title: "Studio Jam", mood: "🎧 Focus", date: Date(), image: nil),          // Phuc's NEW changes
-        .init(title: "Coffee Time", mood: "☕️ Cozy", date: Date(), image: nil),          // Phuc's NEW changes
-        .init(title: "Weekend Sketch", mood: "✏️ Creative", date: Date(), image: nil),   // Phuc's NEW changes
-        .init(title: "Gallery Walk", mood: "🖼️ Artsy", date: Date(), image: nil),        // Phuc's NEW changes
-        .init(title: "Quiet Night", mood: "🌙 Calm", date: Date(), image: nil)           // Phuc's NEW changes
+        .init(title: "Morning Ride", mood: "🧘‍♂️ Calm", date: Date(), image: nil),         
+        .init(title: "Campus Sunset", mood: "🌅 Chill", date: Date(), image: nil),       
+        .init(title: "Studio Jam", mood: "🎧 Focus", date: Date(), image: nil),          
+        .init(title: "Coffee Time", mood: "☕️ Cozy", date: Date(), image: nil),          
+        .init(title: "Weekend Sketch", mood: "✏️ Creative", date: Date(), image: nil),   
+        .init(title: "Gallery Walk", mood: "🖼️ Artsy", date: Date(), image: nil),        
+        .init(title: "Quiet Night", mood: "🌙 Calm", date: Date(), image: nil)           
     ]
     
     private var smallEmojiItems: [SmallItem] = (0..<12).map { _ in SmallItem(text: "🙂") }
@@ -186,7 +186,7 @@ class DashboardViewController: UIViewController {
         notifications.insert(welcomeNotification, at: 0)
     }
     
-    // MARK: - NEW: Build the content below the message label
+    // MARK: - Build the content below the message label
     private func setupContentSections() {
         // Scroll container under messageLabel
         contentScrollView.translatesAutoresizingMaskIntoConstraints = false
@@ -271,15 +271,15 @@ class DashboardViewController: UIViewController {
     @objc private func addToGalleryTapped() {
         let ac = UIAlertController(title: "Add to Gallery", message: "What would you like to add?", preferredStyle: .actionSheet)
         ac.addAction(UIAlertAction(title: "Emoji", style: .default, handler: { _ in
-            self.galleryItems.insert(.init(title: "New Emoji", mood: "😊 Happy", date: Date(), image: nil), at: 0)  // Phuc's NEW changes
+            self.galleryItems.insert(.init(title: "New Emoji", mood: "😊 Happy", date: Date(), image: nil), at: 0)  
             self.galleryCollectionView.reloadData()
         }))
         ac.addAction(UIAlertAction(title: "Images", style: .default, handler: { _ in
-            self.galleryItems.insert(.init(title: "New Image", mood: "🖼️ Artsy", date: Date(), image: nil), at: 0)  // Phuc's NEW changes
+            self.galleryItems.insert(.init(title: "New Image", mood: "🖼️ Artsy", date: Date(), image: nil), at: 0)  
             self.galleryCollectionView.reloadData()
         }))
         ac.addAction(UIAlertAction(title: "Sketches", style: .default, handler: { _ in
-            self.galleryItems.insert(.init(title: "New Sketch", mood: "✏️ Creative", date: Date(), image: nil), at: 0) // Phuc's NEW changes
+            self.galleryItems.insert(.init(title: "New Sketch", mood: "✏️ Creative", date: Date(), image: nil), at: 0) 
             self.galleryCollectionView.reloadData()
         }))
         ac.addAction(UIAlertAction(title: "Cancel", style: .cancel))
@@ -294,7 +294,7 @@ class DashboardViewController: UIViewController {
     @objc private func addPostTapped() {
         let ac = UIAlertController(title: "Create a post!", message: nil, preferredStyle: .actionSheet)
         ac.addAction(UIAlertAction(title: "Image", style: .default, handler: { _ in
-            self.showImageSourceSelection()     // Phuc's NEW changes
+            self.showImageSourceSelection()     
         }))
         ac.addAction(UIAlertAction(title: "Sketch", style: .default, handler: { _ in
             let a = UIAlertController(title: "Coming Soon", message: "Sketch post creation will be available soon.", preferredStyle: .alert)
@@ -309,7 +309,7 @@ class DashboardViewController: UIViewController {
         present(ac, animated: true)
     }
     
-    // Phuc's NEW changes: Helper function to show menu selection about where the user wants to get the photo from
+    // Helper function to show menu selection about where the user wants to get the photo from
     private func showImageSourceSelection() {
         let sourceAlert = UIAlertController(
             title: "Select Photo Source",
@@ -340,7 +340,7 @@ class DashboardViewController: UIViewController {
         present(sourceAlert, animated: true)
     }
     
-    // NEW: Helper function for user to select an image
+    // Helper function for user to select an image
     private func openImagePicker(sourceType: UIImagePickerController.SourceType) {
         let picker = UIImagePickerController()
         picker.sourceType = sourceType
@@ -349,7 +349,7 @@ class DashboardViewController: UIViewController {
         present(picker, animated: true)
     }
     
-    // NEW: Helper function to display preview of the currently selected image to add
+    // Helper function to display preview of the currently selected image to add
     private func showImagePreview(image: UIImage) {
         let previewVC = ImagePreviewViewController(
             image: image,
@@ -366,7 +366,7 @@ class DashboardViewController: UIViewController {
         present(previewVC, animated: true)
     }
 
-    // NEW: Helper function to create a new post with the selected image
+    // Helper function to create a new post with the selected image
     private func createImagePost(with image: UIImage) {
         // Create a new gallery item with current date
         let newPost = GalleryItem(
@@ -417,7 +417,7 @@ class DashboardViewController: UIViewController {
     }
 }
 
-// MARK: - TableView (existing)
+// MARK: - TableView
 extension DashboardViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return notifications.count
@@ -436,7 +436,7 @@ extension DashboardViewController: UITableViewDelegate, UITableViewDataSource {
     }
 }
 
-// MARK: - NEW: CollectionView DataSource/Delegate
+// MARK: - CollectionView DataSource/Delegate
 extension DashboardViewController: UICollectionViewDataSource, UICollectionViewDelegate {
     func numberOfSections(in collectionView: UICollectionView) -> Int { 1 }
     
@@ -467,7 +467,7 @@ extension DashboardViewController: UICollectionViewDataSource, UICollectionViewD
     }
 }
 
-// MARK: - UIImagePickerController Delegate  (Phuc's NEW changes)
+// MARK: - UIImagePickerController Delegate
 extension DashboardViewController: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
@@ -488,7 +488,7 @@ extension DashboardViewController: UIImagePickerControllerDelegate, UINavigation
     }
 }
 
-// MARK: - NEW: Compositional Layouts (responsive & comfy)
+// MARK: - Compositional Layouts
 extension DashboardViewController {
     private static func makeSectionTitle(_ text: String) -> UILabel {
         let l = UILabel()
@@ -627,7 +627,7 @@ extension DashboardViewController {
     }
 }
 
-// MARK: - NEW: Preview Overlay
+// MARK: - Preview Overlay
 private extension DashboardViewController {
     func presentPreview(title: String, contentText: String) {
         let vc = ModalPreviewController(titleText: title, contentText: contentText)
@@ -637,12 +637,12 @@ private extension DashboardViewController {
     }
 }
 
-// MARK: - NEW: Cells & Models (local to this file)
+// MARK: - Cells & Models (local to this file)
 struct GalleryItem {
     let title: String
     let mood: String
     let date: Date
-    let image: UIImage?  // Phuc's NEW changes
+    let image: UIImage?
 }
 
 struct SmallItem {
@@ -655,18 +655,18 @@ struct PostItem {
     var liked: Bool
 }
 
-// Gallery Cell (rounded, labels inside)
+// Gallery Cell
 final class GalleryCell: UICollectionViewCell {
     static let reuseID = "GalleryCell"
     
     private let card = UIView()
-    private let imageView = UIImageView() // Phuc's NEW changes: Image View
+    private let imageView = UIImageView()    // Preview of user's currently selected image to add to the new post
     private let titleLabel = UILabel()
     private let moodLabel = UILabel()
     private let dateLabel = UILabel()
     private let profileBadge = UIView()
     private let profileIcon = UIImageView()
-    private let glassBackground = UIView()  // Phuc's NEW changes: Glass background behind date
+    private let glassBackground = UIView()  // Glass background used to place behind date in new post
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -683,7 +683,7 @@ final class GalleryCell: UICollectionViewCell {
         card.layer.masksToBounds = true
         contentView.addSubview(card)
         
-        // Phuc's NEW Changes: Setup image view
+        // Setup the image view
         imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.contentMode = .scaleAspectFill
         imageView.clipsToBounds = true
@@ -704,14 +704,14 @@ final class GalleryCell: UICollectionViewCell {
         vstack.translatesAutoresizingMaskIntoConstraints = false
         card.addSubview(vstack)
         
-        // Phuc's NEW Changes: Setup glass background for date
+        // Setup the glass background for date
         glassBackground.translatesAutoresizingMaskIntoConstraints = false
         glassBackground.backgroundColor = UIColor.white.withAlphaComponent(0.3)
         glassBackground.layer.cornerRadius = 10
         glassBackground.layer.masksToBounds = true
-        glassBackground.isHidden = true  // Only show for images
+        glassBackground.isHidden = true
 
-        // Add blur effect to glass background
+        // Adds the blur effect to glass background
         let blurEffect = UIBlurEffect(style: .light)
         let blurView = UIVisualEffectView(effect: blurEffect)
         blurView.translatesAutoresizingMaskIntoConstraints = false
@@ -745,7 +745,6 @@ final class GalleryCell: UICollectionViewCell {
             card.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             card.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
             
-            // Phuc's NEW Changes: Image View constraints
             imageView.topAnchor.constraint(equalTo: card.topAnchor),
             imageView.leadingAnchor.constraint(equalTo: card.leadingAnchor),
             imageView.trailingAnchor.constraint(equalTo: card.trailingAnchor),
@@ -756,7 +755,6 @@ final class GalleryCell: UICollectionViewCell {
             vstack.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -12),
             vstack.topAnchor.constraint(greaterThanOrEqualTo: card.topAnchor, constant: 12),
             
-            // Phuc's NEW Changes
             glassBackground.leadingAnchor.constraint(equalTo: vstack.leadingAnchor, constant: -8),
             glassBackground.topAnchor.constraint(equalTo: vstack.topAnchor, constant: -8),
             glassBackground.bottomAnchor.constraint(equalTo: vstack.bottomAnchor, constant: 8),
@@ -777,12 +775,13 @@ final class GalleryCell: UICollectionViewCell {
         df.dateFormat = "MMM. d, yyyy"
         dateLabel.text = df.string(from: item.date)
         
-        // Phuc's NEW Changes: Display the image if there is any
+        // Display the image if there is any
         if let image = item.image {
             imageView.image = image
+            // Post in Gallery section Have glass background behind date if the post has an image
             glassBackground.isHidden = false
         } else {
-            // If no image, use placeholder background
+            // If no image, use placeholder background color and don't have glass background
             imageView.backgroundColor = UIColor(hex: "#E5E7EB")
             glassBackground.isHidden = true
         }
@@ -907,7 +906,7 @@ final class PostCell: UICollectionViewCell {
     }
 }
 
-// MARK: - NEW: Simple full-screen preview controller
+// MARK: - Simple full-screen preview controller
 final class ModalPreviewController: UIViewController {
     private let titleText: String
     private let contentText: String
@@ -970,7 +969,7 @@ final class ModalPreviewController: UIViewController {
             closeBtn.centerXAnchor.constraint(equalTo: container.centerXAnchor)
         ])
         
-        // tap outside to close
+        // Tap outside to close
         let tap = UITapGestureRecognizer(target: self, action: #selector(dismissSelf))
         view.addGestureRecognizer(tap)
     }
@@ -1140,7 +1139,7 @@ final class PostDetailViewController: UIViewController {
     @objc private func dismissSelf() { dismiss(animated: true) }
 }
 
-// MARK: - Image Preview Modal (Phuc's NEW Changes)
+// MARK: - Image Preview Modal
 final class ImagePreviewViewController: UIViewController {
     private let image: UIImage
     private let onUsePhoto: () -> Void
@@ -1279,7 +1278,7 @@ final class ImagePreviewViewController: UIViewController {
 }
 
 
-// MARK: - Color Extension (existing)
+// MARK: - Color Extension
 extension UIColor {
     convenience init(hex: String) {
         var hexSanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -1296,9 +1295,9 @@ extension UIColor {
     }
 }
 
-// MARK: - UIIMage Extension (Phuc's NEW Changes)
+// MARK: - UIIMage Extension
 extension UIImage {
-    // NEW: Helper function to resize the
+    // Helper function to resize the width of an UIImage
     func resizedToWidth(width: CGFloat) -> UIImage? {
         // Avoid division by zero
         guard self.size.width > 0 else { return self }
@@ -1316,6 +1315,7 @@ extension UIImage {
     
     // NEW: Helper function to resize the height of an UIImage
     func resizedToHeight(_ maxHeight: CGFloat) -> UIImage? {
+        // Avoid division by zero
         guard self.size.height > 0 else { return self }
         
         let ratio = maxHeight / self.size.height

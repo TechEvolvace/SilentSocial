@@ -1,3 +1,6 @@
+//  Project: SilentSocial
+//  Names: Phuc Dinh, Nicholas Ng, Preston Tu, Rui Xue
+//  Course: CS329E
 //  ThemeSettingsViewController.swift
 import UIKit
 extension UIColor {
