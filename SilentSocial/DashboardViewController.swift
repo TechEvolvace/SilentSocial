@@ -29,7 +29,7 @@ class DashboardViewController: UIViewController {
         let l = UILabel()
         l.text = "Gallery"
         l.font = .systemFont(ofSize: 22, weight: .semibold)
-        l.textColor = UIColor(hex: "#2C3331")
+        l.textColor = .label
         return l
     }()
     private lazy var addToGalleryButton: UIButton = {
@@ -123,29 +123,26 @@ class DashboardViewController: UIViewController {
     
     // MARK: - Setup
     private func setupUI() {
-        view.backgroundColor = .white
-        
+        // Use dynamic system colors so Light/Dark theme works
+        view.backgroundColor = .customBackground
+
         // Welcome label
         welcomeLabel.text = "Welcome!"
         welcomeLabel.font = UIFont.systemFont(ofSize: 32, weight: .semibold)
-        welcomeLabel.textColor = UIColor(hex: "#2C3331")
-        
+        welcomeLabel.textColor = .label   // dynamic: dark text on light, light text on dark
+
         // Message label
         messageLabel.text = "Start your journey with SilentSocial!"
         messageLabel.font = UIFont.systemFont(ofSize: 18, weight: .regular)
-        messageLabel.textColor = .systemBlue
+        messageLabel.textColor = .secondaryLabel
         messageLabel.textAlignment = .center
         messageLabel.numberOfLines = 0
-        
+
         // Notification container styling
         notificationContainerView.isHidden = true
-        notificationContainerView.backgroundColor = .white
-        notificationContainerView.layer.cornerRadius = 8
-        notificationContainerView.layer.shadowColor = UIColor.black.cgColor
-        notificationContainerView.layer.shadowOpacity = 0.15
-        notificationContainerView.layer.shadowOffset = CGSize(width: 0, height: 3)
-        notificationContainerView.layer.shadowRadius = 6
-        notificationContainerView.layer.zPosition = 999
+        notificationContainerView.layer.cornerRadius = 12
+        notificationContainerView.layer.masksToBounds = true
+        notificationContainerView.backgroundColor = .secondarySystemBackground
         
         // Badge label styling
         badgeLabel.isHidden = true
@@ -173,7 +170,7 @@ class DashboardViewController: UIViewController {
         notificationTableView.dataSource = self
         notificationTableView.register(NotificationCell.self, forCellReuseIdentifier: "NotificationCell")
         notificationTableView.separatorStyle = .singleLine
-        notificationTableView.backgroundColor = .white
+        notificationTableView.backgroundColor = .customBackground
         notificationTableView.rowHeight = UITableView.automaticDimension
         notificationTableView.estimatedRowHeight = 60
     }
