@@ -30,7 +30,7 @@ class LoginScreenViewController: UIViewController, UITextFieldDelegate {
                let sceneDelegate = windowScene.delegate as? SceneDelegate {
                 let storyboard = UIStoryboard(name: "Main", bundle: nil)
                 //  switch the root controller to dismiss auth screens
-                if let mainAppVC = storyboard.instantiateViewController(withIdentifier: "MainDashboard") as? UIViewController {
+                if let mainAppVC = storyboard.instantiateViewController(withIdentifier: "DashboardViewController") as? UIViewController {
                     sceneDelegate.window?.rootViewController = mainAppVC
                 }
             }
@@ -77,7 +77,7 @@ class LoginScreenViewController: UIViewController, UITextFieldDelegate {
                            let sceneDelegate = windowScene.delegate as? SceneDelegate {
                             let storyboard = UIStoryboard(name: "Main", bundle: nil)
                             // switch the root controller to the dashboard
-                            if let mainAppVC = storyboard.instantiateViewController(withIdentifier: "MainDashboard") as? UIViewController {
+                            if let mainAppVC = storyboard.instantiateViewController(withIdentifier: "DashboardViewController") as? UIViewController {
                                 sceneDelegate.window?.rootViewController = mainAppVC
                             }
                         }
