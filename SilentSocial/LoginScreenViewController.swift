@@ -26,14 +26,7 @@ class LoginScreenViewController: UIViewController, UITextFieldDelegate {
         
         // Check if a user is already authenticated and immediately switch to the main app
         if Auth.auth().currentUser != nil {
-            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-               let sceneDelegate = windowScene.delegate as? SceneDelegate {
-                let storyboard = UIStoryboard(name: "Main", bundle: nil)
-                //  switch the root controller to dismiss auth screens
-                if let mainAppVC = storyboard.instantiateViewController(withIdentifier: "MainDashboard") as? UIViewController {
-                    sceneDelegate.window?.rootViewController = mainAppVC
-                }
-            }
+            setRootToMainTabs()
         }
         
         // Set Various Label text to nothing
@@ -72,15 +65,7 @@ class LoginScreenViewController: UIViewController, UITextFieldDelegate {
                         // SUCCESS!
                         self.errorLabel.text = ""
                         
-                        // **INLINE LOGIC to switch the root view controller**
-                        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                           let sceneDelegate = windowScene.delegate as? SceneDelegate {
-                            let storyboard = UIStoryboard(name: "Main", bundle: nil)
-                            // switch the root controller to the dashboard
-                            if let mainAppVC = storyboard.instantiateViewController(withIdentifier: "MainDashboard") as? UIViewController {
-                                sceneDelegate.window?.rootViewController = mainAppVC
-                            }
-                        }
+                        self.setRootToMainTabs()
                         
                         // Clear the fields after a successful login
                         self.userLoginTextField.text = nil
@@ -145,30 +130,23 @@ class LoginScreenViewController: UIViewController, UITextFieldDelegate {
 }
 
 extension LoginScreenViewController {
-    private func presentMainTabs() {
+    private func setRootToMainTabs() {
         let sb = UIStoryboard(name: "Main", bundle: nil)
-        guard let home = sb.instantiateViewController(withIdentifier: "DashboardViewController") as? DashboardViewController,
-              let profile = sb.instantiateViewController(withIdentifier: "ProfileViewController") as? ProfileViewController,
-              let settings = sb.instantiateViewController(withIdentifier: "SettingsTableViewController") as? SettingsTableViewController
-        else {
-            return
-        }
-
+        guard let home = sb.instantiateViewController(withIdentifier: "DashboardViewController") as? DashboardViewController
+        else { return }
+        let profile = PostsProfileViewController()
         home.title = "Home"
         profile.title = "Profile"
-        settings.title = "Setting"
-
         let homeNav = UINavigationController(rootViewController: home)
         let profileNav = UINavigationController(rootViewController: profile)
-        let settingsNav = UINavigationController(rootViewController: settings)
-
         homeNav.tabBarItem = UITabBarItem(title: "Home", image: UIImage(systemName: "house"), selectedImage: UIImage(systemName: "house.fill"))
         profileNav.tabBarItem = UITabBarItem(title: "Profile", image: UIImage(systemName: "person"), selectedImage: UIImage(systemName: "person.fill"))
-        settingsNav.tabBarItem = UITabBarItem(title: "Setting", image: UIImage(systemName: "gearshape"), selectedImage: UIImage(systemName: "gearshape.fill"))
-
         let tabs = UITabBarController()
-        tabs.viewControllers = [homeNav, profileNav, settingsNav]
-        tabs.modalPresentationStyle = .fullScreen
-        present(tabs, animated: true)
+        tabs.viewControllers = [homeNav, profileNav]
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let sceneDelegate = windowScene.delegate as? SceneDelegate {
+            sceneDelegate.window?.rootViewController = tabs
+            sceneDelegate.window?.makeKeyAndVisible()
+        }
     }
 }

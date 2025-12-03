@@ -18,7 +18,7 @@ class ProfileSetupViewController: UIViewController, UITextFieldDelegate {
     @IBOutlet weak var displayNameSetTextField: UITextField!
     @IBOutlet weak var errorLabel: UILabel!
     
-    // Define variables
+    // Variables
     var currentUser: User?
     
     override func viewDidLoad() {
@@ -81,17 +81,22 @@ class ProfileSetupViewController: UIViewController, UITextFieldDelegate {
                                 if let error = error {
                                     errorLabel.text = "Failed to create profile: \(error.localizedDescription)"
                                 } else {
-                                    //Profile created and dismiss authentication stack
                                     if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
                                        let sceneDelegate = windowScene.delegate as? SceneDelegate {
-                                        
-                                        // Instantiate the main content view controller
-                                        let storyboard = UIStoryboard(name: "Main", bundle: nil)
-                                        let mainAppVC = storyboard.instantiateViewController(withIdentifier: "MainDashboard")
-                                        
-                                        // Set the new view controller as the root view controller of the window
-                                        sceneDelegate.window?.rootViewController = mainAppVC
-                                        sceneDelegate.window?.makeKeyAndVisible()
+                                        let sb = UIStoryboard(name: "Main", bundle: nil)
+                                        if let home = sb.instantiateViewController(withIdentifier: "DashboardViewController") as? DashboardViewController {
+                                            let profile = PostsProfileViewController()
+                                            home.title = "Home"
+                                            profile.title = "Profile"
+                                            let homeNav = UINavigationController(rootViewController: home)
+                                            let profileNav = UINavigationController(rootViewController: profile)
+                                            homeNav.tabBarItem = UITabBarItem(title: "Home", image: UIImage(systemName: "house"), selectedImage: UIImage(systemName: "house.fill"))
+                                            profileNav.tabBarItem = UITabBarItem(title: "Profile", image: UIImage(systemName: "person"), selectedImage: UIImage(systemName: "person.fill"))
+                                            let tabs = UITabBarController()
+                                            tabs.viewControllers = [homeNav, profileNav]
+                                            sceneDelegate.window?.rootViewController = tabs
+                                            sceneDelegate.window?.makeKeyAndVisible()
+                                        }
                                     }
                                 }
                             }

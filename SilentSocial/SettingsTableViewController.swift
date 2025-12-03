@@ -31,22 +31,15 @@ final class SettingsTableViewController: UITableViewController {
 
         switch row {
         case .profile:
-            performSegue(withIdentifier: "showProfileFromSettings", sender: nil)
-
+            break
         case .notifications:
-            // Push the Notifications settings screen
-            performSegue(withIdentifier: "showNotificationsSettings", sender: nil)
-
+            break
         case .theme:
-            // Push the Theme settings screen
-            performSegue(withIdentifier: "showThemeSettings", sender: nil)
-
+            break
         case .changePassword:
             sendPasswordReset()
-
         case .logout:
             logOut()
-
         case .deleteAccount:
             confirmDeleteAccount()
         }
