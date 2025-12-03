@@ -458,7 +458,8 @@ extension DashboardViewController: UICollectionViewDataSource, UICollectionViewD
                 name: "Andy Finn",
                 location: "University of Texas at Austin",
                 emojiCaption: "😍 ❤️ 😘 🤣 ❤️ 😘 ❤️ 😘",
-                date: galleryItems[indexPath.item].date
+                date: galleryItems[indexPath.item].date,
+                image: galleryItems[indexPath.item].image
             )
             detail.modalPresentationStyle = .overCurrentContext
             detail.modalTransitionStyle = .crossDissolve
@@ -983,12 +984,14 @@ final class PostDetailViewController: UIViewController {
     private let location: String
     private let emojiCaption: String
     private let date: Date
+    private let image: UIImage?
     
-    init(name: String, location: String, emojiCaption: String, date: Date) {
+    init(name: String, location: String, emojiCaption: String, date: Date, image: UIImage?) {
         self.name = name
         self.location = location
         self.emojiCaption = emojiCaption
         self.date = date
+        self.image = image
         super.init(nibName: nil, bundle: nil)
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -1008,11 +1011,18 @@ final class PostDetailViewController: UIViewController {
         container.layer.borderColor = UIColor(hex: "#E5E7EB").cgColor
         view.addSubview(container)
         
-        let headerImage = UIView()
+        let headerImage = UIImageView()
         headerImage.translatesAutoresizingMaskIntoConstraints = false
-        headerImage.backgroundColor = UIColor(hex: "#D1D5DB")
         headerImage.layer.cornerRadius = 12
         headerImage.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        headerImage.clipsToBounds = true
+        if let img = image {
+            headerImage.image = img
+            headerImage.contentMode = .scaleAspectFill
+        } else {
+            headerImage.backgroundColor = UIColor(hex: "#D1D5DB")
+            headerImage.contentMode = .scaleAspectFill
+        }
         
         let avatarBadge = UIView()
         avatarBadge.translatesAutoresizingMaskIntoConstraints = false
