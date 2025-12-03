@@ -27,4 +27,16 @@ final class FirebaseService {
     func storageProfileImageRef(uid: String) -> StorageReference {
         return storage.reference().child("users/\(uid)/avatar.jpg")
     }
+
+    func storagePostImageRef(uid: String, postID: String) -> StorageReference {
+        return storage.reference().child("posts/\(uid)/\(postID).jpg")
+    }
+
+    func postsCollection() -> CollectionReference {
+        return db.collection("posts")
+    }
+
+    func userPostsCollection(uid: String) -> CollectionReference {
+        return db.collection("users").document(uid).collection("posts")
+    }
 }

@@ -4,6 +4,8 @@
 // DashboardViewController.swift
 
 import UIKit
+import FirebaseFirestore
+import FirebaseStorage
 
 class DashboardViewController: UIViewController {
     
@@ -80,15 +82,15 @@ class DashboardViewController: UIViewController {
     }()
     private var postsCollectionView: UICollectionView!
     
-    // MARK: - New Data used for a Mock demo
+
     private var galleryItems: [GalleryItem] = [
-        .init(title: "Morning Ride", mood: "🧘‍♂️ Calm", date: Date(), image: nil),         
-        .init(title: "Campus Sunset", mood: "🌅 Chill", date: Date(), image: nil),       
-        .init(title: "Studio Jam", mood: "🎧 Focus", date: Date(), image: nil),          
-        .init(title: "Coffee Time", mood: "☕️ Cozy", date: Date(), image: nil),          
-        .init(title: "Weekend Sketch", mood: "✏️ Creative", date: Date(), image: nil),   
-        .init(title: "Gallery Walk", mood: "🖼️ Artsy", date: Date(), image: nil),        
-        .init(title: "Quiet Night", mood: "🌙 Calm", date: Date(), image: nil)           
+        .init(title: "Morning Ride", mood: "🧘‍♂️", date: Date(), image: nil),         
+        .init(title: "Campus Sunset", mood: "🌅", date: Date(), image: nil),       
+        .init(title: "Studio Jam", mood: "🎧", date: Date(), image: nil),          
+        .init(title: "Coffee Time", mood: "☕️", date: Date(), image: nil),          
+        .init(title: "Weekend Sketch", mood: "✏️", date: Date(), image: nil),   
+        .init(title: "Gallery Walk", mood: "🖼️", date: Date(), image: nil),        
+        .init(title: "Quiet Night", mood: "🌙", date: Date(), image: nil)           
     ]
     
     private var smallEmojiItems: [SmallItem] = (0..<12).map { _ in SmallItem(text: "🙂") }
@@ -122,7 +124,6 @@ class DashboardViewController: UIViewController {
         view.bringSubviewToFront(notificationContainerView)
     }
     
-    // MARK: - Setup
     private func setupUI() {
         // Use dynamic system colors so Light/Dark theme works
         view.backgroundColor = .customBackground
@@ -185,8 +186,7 @@ class DashboardViewController: UIViewController {
         )
         notifications.insert(welcomeNotification, at: 0)
     }
-    
-    // MARK: - Build the content below the message label
+
     private func setupContentSections() {
         // Scroll container under messageLabel
         contentScrollView.translatesAutoresizingMaskIntoConstraints = false
@@ -368,21 +368,18 @@ class DashboardViewController: UIViewController {
 
     // Helper function to create a new post with the selected image
     private func createImagePost(with image: UIImage) {
-        // Create a new gallery item with current date
         let newPost = GalleryItem(
             title: "New Image Post",
-            mood: "📸 Captured",
+            mood: "📸",
             date: Date(),
             image: image
         )
-        
-        // Insert at index 0 (beginning) for reverse chronological order
         galleryItems.insert(newPost, at: 0)
         
         // Reload the gallery collection view to show the new post
         galleryCollectionView.reloadData()
         
-        // Optional: Scroll to show the new post
+        // Scroll to show the new post at the top of the collection view
         galleryCollectionView.scrollToItem(
             at: IndexPath(item: 0, section: 0),
             at: .top,
@@ -397,9 +394,32 @@ class DashboardViewController: UIViewController {
         )
         successAlert.addAction(UIAlertAction(title: "OK", style: .default))
         present(successAlert, animated: true)
+        saveImagePostToFirestore(image)
+    }
+
+    private func saveImagePostToFirestore(_ image: UIImage) {
+        guard let uid = FirebaseService.shared.currentUID() else { return }
+        let postID = UUID().uuidString
+        guard let data = image.jpegData(compressionQuality: 0.9) else { return }
+        let ref = FirebaseService.shared.storagePostImageRef(uid: uid, postID: postID)
+        let md = StorageMetadata()
+        md.contentType = "image/jpeg"
+        ref.putData(data, metadata: md) { _, err in
+            if let _ = err { return }
+            ref.downloadURL { url, _ in
+                guard let url = url else { return }
+                let doc = FirebaseService.shared.userPostsCollection(uid: uid).document(postID)
+                doc.setData([
+                    "uid": uid,
+                    "type": "image",
+                    "imageURL": url.absoluteString,
+                    "createdAt": FieldValue.serverTimestamp()
+                ])
+            }
+        }
     }
     
-    // MARK: - Notification Management
+    // Notification Management
     private func updateBadgeCount() {
         let unreadCount = notifications.filter { !$0.isRead }.count
         if unreadCount > 0 {
@@ -417,7 +437,6 @@ class DashboardViewController: UIViewController {
     }
 }
 
-// MARK: - TableView
 extension DashboardViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return notifications.count
@@ -454,21 +473,39 @@ extension DashboardViewController: UICollectionViewDataSource, UICollectionViewD
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         if collectionView == galleryCollectionView {
-            let detail = PostDetailViewController(
-                name: "Andy Finn",
-                location: "University of Texas at Austin",
-                emojiCaption: "😍 ❤️ 😘 🤣 ❤️ 😘 ❤️ 😘",
-                date: galleryItems[indexPath.item].date,
-                image: galleryItems[indexPath.item].image
-            )
-            detail.modalPresentationStyle = .overCurrentContext
-            detail.modalTransitionStyle = .crossDissolve
-            present(detail, animated: true)
+            let g = galleryItems[indexPath.item]
+            if let uid = FirebaseService.shared.currentUID() {
+                FirebaseService.shared.userDocRef(uid: uid).getDocument { [weak self] snap, _ in
+                    guard let self = self else { return }
+                    let dn = (snap?.data()? ["displayName"] as? String) ?? ""
+                    let detail = PostDetailViewController(
+                        name: dn,
+                        location: "",
+                        emojiCaption: g.mood,
+                        date: g.date,
+                        image: g.image
+                    )
+                    detail.modalPresentationStyle = .overCurrentContext
+                    detail.modalTransitionStyle = .crossDissolve
+                    self.present(detail, animated: true)
+                }
+            } else {
+                let detail = PostDetailViewController(
+                    name: "",
+                    location: "",
+                    emojiCaption: g.mood,
+                    date: g.date,
+                    image: g.image
+                )
+                detail.modalPresentationStyle = .overCurrentContext
+                detail.modalTransitionStyle = .crossDissolve
+                present(detail, animated: true)
+            }
         }
     }
 }
 
-// MARK: - UIImagePickerController Delegate
+// Image Picker Controller Delegate
 extension DashboardViewController: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
@@ -489,7 +526,6 @@ extension DashboardViewController: UIImagePickerControllerDelegate, UINavigation
     }
 }
 
-// MARK: - Compositional Layouts
 extension DashboardViewController {
     private static func makeSectionTitle(_ text: String) -> UILabel {
         let l = UILabel()
@@ -628,7 +664,7 @@ extension DashboardViewController {
     }
 }
 
-// MARK: - Preview Overlay
+
 private extension DashboardViewController {
     func presentPreview(title: String, contentText: String) {
         let vc = ModalPreviewController(titleText: title, contentText: contentText)
@@ -638,7 +674,6 @@ private extension DashboardViewController {
     }
 }
 
-// MARK: - Cells & Models (local to this file)
 struct GalleryItem {
     let title: String
     let mood: String
@@ -907,7 +942,6 @@ final class PostCell: UICollectionViewCell {
     }
 }
 
-// MARK: - Simple full-screen preview controller
 final class ModalPreviewController: UIViewController {
     private let titleText: String
     private let contentText: String
@@ -978,13 +1012,13 @@ final class ModalPreviewController: UIViewController {
     @objc private func dismissSelf() { dismiss(animated: true) }
 }
 
-// MARK: - Post Detail (modal)
 final class PostDetailViewController: UIViewController {
     private let name: String
     private let location: String
     private let emojiCaption: String
     private let date: Date
     private let image: UIImage?
+    private let emojiLabel = UILabel()
     
     init(name: String, location: String, emojiCaption: String, date: Date, image: UIImage?) {
         self.name = name
@@ -1043,16 +1077,10 @@ final class PostDetailViewController: UIViewController {
         nameLabel.font = .systemFont(ofSize: 20, weight: .bold)
         nameLabel.textColor = UIColor(hex: "#2C3331")
         
-        let locationLabel = UILabel()
-        locationLabel.translatesAutoresizingMaskIntoConstraints = false
-        locationLabel.textColor = UIColor(hex: "#2C3331")
-        locationLabel.font = .systemFont(ofSize: 14, weight: .regular)
-        locationLabel.text = "\u{1F4CC} " + location
-        
-        let nameStack = UIStackView(arrangedSubviews: [nameLabel, locationLabel])
+        let nameStack = UIStackView(arrangedSubviews: [nameLabel])
         nameStack.translatesAutoresizingMaskIntoConstraints = false
         nameStack.axis = .vertical
-        nameStack.spacing = 2
+        nameStack.spacing = 0
         
         let headerStack = UIStackView(arrangedSubviews: [avatarBadge, nameStack])
         headerStack.translatesAutoresizingMaskIntoConstraints = false
@@ -1060,10 +1088,12 @@ final class PostDetailViewController: UIViewController {
         headerStack.spacing = 12
         headerStack.alignment = .center
         
-        let emojiLabel = UILabel()
         emojiLabel.translatesAutoresizingMaskIntoConstraints = false
-        emojiLabel.text = emojiCaption
+        emojiLabel.text = cleanedEmoji(emojiCaption)
         emojiLabel.font = .systemFont(ofSize: 20, weight: .regular)
+        emojiLabel.isUserInteractionEnabled = true
+        let emojiTap = UITapGestureRecognizer(target: self, action: #selector(emojiTapped))
+        emojiLabel.addGestureRecognizer(emojiTap)
 
         let closeBtn = UIButton(type: .system)
         closeBtn.translatesAutoresizingMaskIntoConstraints = false
@@ -1071,39 +1101,12 @@ final class PostDetailViewController: UIViewController {
         closeBtn.tintColor = UIColor(hex: "#2C3331")
         closeBtn.addTarget(self, action: #selector(dismissSelf), for: .touchUpInside)
         
-        let dateLabel = UILabel()
-        dateLabel.translatesAutoresizingMaskIntoConstraints = false
-        let df = DateFormatter()
-        df.locale = Locale.current
-        df.dateFormat = "MMM. d, yyyy"
-        dateLabel.text = df.string(from: date)
-        dateLabel.font = .systemFont(ofSize: 14, weight: .medium)
-        dateLabel.textColor = UIColor(hex: "#2C3331")
-        
-        let dotsContainer = UIStackView()
-        dotsContainer.translatesAutoresizingMaskIntoConstraints = false
-        dotsContainer.axis = .horizontal
-        dotsContainer.spacing = 6
-        dotsContainer.alignment = .center
-        let dot1 = UIView()
-        dot1.translatesAutoresizingMaskIntoConstraints = false
-        dot1.backgroundColor = UIColor(hex: "#D1D5DB")
-        dot1.layer.cornerRadius = 4
-        let dot2 = UIView()
-        dot2.translatesAutoresizingMaskIntoConstraints = false
-        dot2.backgroundColor = UIColor(hex: "#9CA3AF")
-        dot2.layer.cornerRadius = 4
-        dotsContainer.addArrangedSubview(dot1)
-        dotsContainer.addArrangedSubview(dot2)
-        
         let contentStack = UIStackView(arrangedSubviews: [headerImage, headerStack, emojiLabel])
         contentStack.translatesAutoresizingMaskIntoConstraints = false
         contentStack.axis = .vertical
         contentStack.spacing = 12
         
         container.addSubview(contentStack)
-        container.addSubview(dateLabel)
-        container.addSubview(dotsContainer)
         container.addSubview(closeBtn)
         
         NSLayoutConstraint.activate([
@@ -1127,15 +1130,6 @@ final class PostDetailViewController: UIViewController {
             contentStack.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 12),
             contentStack.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -12),
 
-            dateLabel.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -12),
-            dateLabel.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -18),
-
-            dotsContainer.centerXAnchor.constraint(equalTo: container.centerXAnchor),
-            dotsContainer.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -18),
-            dot1.widthAnchor.constraint(equalToConstant: 8),
-            dot1.heightAnchor.constraint(equalToConstant: 8),
-            dot2.widthAnchor.constraint(equalToConstant: 8),
-            dot2.heightAnchor.constraint(equalToConstant: 8),
             closeBtn.topAnchor.constraint(equalTo: container.topAnchor, constant: 10),
             closeBtn.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -10),
             closeBtn.widthAnchor.constraint(equalToConstant: 28),
@@ -1147,9 +1141,33 @@ final class PostDetailViewController: UIViewController {
     }
     
     @objc private func dismissSelf() { dismiss(animated: true) }
+
+    @objc private func emojiTapped() {
+        let picker = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+        let options = ["🙂", "😍", "❤️", "😘", "😂", "😎", "😢", "😡", "🧘‍♂️", "🌙"]
+        for e in options {
+            picker.addAction(UIAlertAction(title: e, style: .default, handler: { [weak self] _ in
+                self?.emojiLabel.text = e
+            }))
+        }
+        picker.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        present(picker, animated: true)
+    }
+
+    private func cleanedEmoji(_ text: String) -> String {
+        let lettersPattern = "[A-Za-z]+"
+        let spacesPattern = "\\s+"
+        var result = text
+        if let r = try? NSRegularExpression(pattern: lettersPattern, options: .caseInsensitive) {
+            result = r.stringByReplacingMatches(in: result, options: [], range: NSRange(location: 0, length: result.utf16.count), withTemplate: "")
+        }
+        if let s = try? NSRegularExpression(pattern: spacesPattern, options: []) {
+            result = s.stringByReplacingMatches(in: result, options: [], range: NSRange(location: 0, length: result.utf16.count), withTemplate: " ")
+        }
+        return result.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
 }
 
-// MARK: - Image Preview Modal
 final class ImagePreviewViewController: UIViewController {
     private let image: UIImage
     private let onUsePhoto: () -> Void
@@ -1288,7 +1306,6 @@ final class ImagePreviewViewController: UIViewController {
 }
 
 
-// MARK: - Color Extension
 extension UIColor {
     convenience init(hex: String) {
         var hexSanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -1305,7 +1322,6 @@ extension UIColor {
     }
 }
 
-// MARK: - UIIMage Extension
 extension UIImage {
     // Helper function to resize the width of an UIImage
     func resizedToWidth(width: CGFloat) -> UIImage? {
@@ -1338,4 +1354,8 @@ extension UIImage {
             self.draw(in: CGRect(origin: .zero, size: newSize))
         }
     }
+}
+ 
+extension Notification.Name {
+    static let postMoodChanged = Notification.Name("PostMoodChanged")
 }
