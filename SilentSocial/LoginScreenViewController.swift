@@ -26,7 +26,14 @@ class LoginScreenViewController: UIViewController, UITextFieldDelegate {
         
         // Check if a user is already authenticated and immediately switch to the main app
         if Auth.auth().currentUser != nil {
-            setRootToMainTabs()
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+               let sceneDelegate = windowScene.delegate as? SceneDelegate {
+                let storyboard = UIStoryboard(name: "Main", bundle: nil)
+                //  switch the root controller to dismiss auth screens
+                if let mainAppVC = storyboard.instantiateViewController(withIdentifier: "DashboardViewController") as? UIViewController {
+                    sceneDelegate.window?.rootViewController = mainAppVC
+                }
+            }
         }
         
         // Set Various Label text to nothing
@@ -65,7 +72,15 @@ class LoginScreenViewController: UIViewController, UITextFieldDelegate {
                         // SUCCESS!
                         self.errorLabel.text = ""
                         
-                        self.setRootToMainTabs()
+                        // **INLINE LOGIC to switch the root view controller**
+                        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                           let sceneDelegate = windowScene.delegate as? SceneDelegate {
+                            let storyboard = UIStoryboard(name: "Main", bundle: nil)
+                            // switch the root controller to the dashboard
+                            if let mainAppVC = storyboard.instantiateViewController(withIdentifier: "DashboardViewController") as? UIViewController {
+                                sceneDelegate.window?.rootViewController = mainAppVC
+                            }
+                        }
                         
                         // Clear the fields after a successful login
                         self.userLoginTextField.text = nil
