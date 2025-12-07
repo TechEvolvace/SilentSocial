@@ -38,5 +38,14 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         }
 
         window?.overrideUserInterfaceStyle = style
+        if let s = window?.windowScene {
+            s.windows.forEach { $0.overrideUserInterfaceStyle = style }
+        } else {
+            UIApplication.shared.connectedScenes
+                .compactMap { $0 as? UIWindowScene }
+                .forEach { scene in
+                    scene.windows.forEach { $0.overrideUserInterfaceStyle = style }
+                }
+        }
     }
 }
