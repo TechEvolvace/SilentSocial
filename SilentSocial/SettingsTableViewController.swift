@@ -33,9 +33,9 @@ final class SettingsTableViewController: UITableViewController {
         case .profile:
             break
         case .notifications:
-            break
+            performSegue(withIdentifier: "showNotificationsSettings", sender: self)
         case .theme:
-            break
+            performSegue(withIdentifier: "showThemeSettings", sender: self)
         case .changePassword:
             sendPasswordReset()
         case .logout:
