@@ -1,7 +1,7 @@
-//  Project: SilentSocial
-//  Names: Phuc Dinh, Nicholas Ng, Preston Tu, Rui Xue
-//  Course: CS329E
-//  FriendCell.swift
+// Project: SilentSocial
+// Names: Phuc Dinh, Nicholas Ng, Preston Tu, Rui Xue
+// Course: CS329E
+// FriendCell.swift
 
 import UIKit
 
@@ -133,18 +133,11 @@ final class FriendCell: UITableViewCell {
             actionButton.isHidden = true
         }
         
-        // Load Avatar (Simplified Logic for example)
-        if let urlString = profile.photoURL, let url = URL(string: urlString) {
-            // NOTE: Use a production image loader (Kingfisher, SDWebImage) for caching.
-            URLSession.shared.dataTask(with: url) { [weak self] data, _, _ in
-                if let data = data, let image = UIImage(data: data) {
-                    DispatchQueue.main.async {
-                        self?.avatarImageView.image = image
-                    }
-                }
-            }.resume()
+        // Load Avatar using Base64 decoding
+        if let urlString = profile.photoURL, let image = self.image(from: urlString) {
+            self.avatarImageView.image = image
         } else {
-            // Default image if none is set
+            // Default image if none is set or decoding fails
             avatarImageView.image = UIImage(systemName: "person.circle.fill")
             avatarImageView.tintColor = .systemGray
         }
@@ -153,5 +146,20 @@ final class FriendCell: UITableViewCell {
     @objc private func actionButtonTapped() {
         // Triggers the closure defined in the View Controller
         actionHandler?(userProfile)
+    }
+
+    // MARK: - Base64 Helper
+    
+    /// Decodes a Base64 string (potentially with a data URI prefix) into a UIImage.
+    private func image(from base64String: String) -> UIImage? {
+        // Check for and strip the optional 'data:image/jpeg;base64,' prefix
+        let parts = base64String.components(separatedBy: ",")
+        guard let base64 = parts.last else { return nil }
+
+        // Decode the Base64 string back into Data
+        guard let data = Data(base64Encoded: base64, options: .ignoreUnknownCharacters) else { return nil }
+        
+        // Create UIImage from Data
+        return UIImage(data: data)
     }
 }

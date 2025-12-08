@@ -141,73 +141,73 @@ final class FirebaseService {
     }
 
     // Function to handle sending a friend request (updates target user's incomingRequests array)
-    func addIncomingRequest(targetUID: String, senderProfile: UserProfile, completion: @escaping (Error?) -> Void) {
-        let targetRef = userDocRef(uid: targetUID) // Using existing helper
-        
-        // Update the recipient's incomingRequests array
-        targetRef.updateData([
-            "incomingRequests": FieldValue.arrayUnion([senderProfile.uid])
-        ]) { error in
+    func addIncomingRequest(targetUID: String, senderUID: String, completion: @escaping (Error?) -> Void) {
+            let targetRef = db.collection("users").document(targetUID)
+            
+            targetRef.updateData([
+                "incomingRequests": FieldValue.arrayUnion([senderUID])
+            ]) { error in
+                
+                // MARK: Place holder for notification I think
+                completion(error)
+            }
+        }
+
+    //Completes a friend request by adding the reciprocal friendship connectiona nd clearing the pending request status for both users using a Write Batch.
+    // In FirebaseService.swift
+
+    func acceptFriendRequestAtomic(requesterUID A_UID: String, acceptorUID B_UID: String, completion: @escaping (Error?) -> Void) {
+        let batch = db.batch()
+        let acceptorDocRef = userDocRef(uid: B_UID) // Current User (Acceptor)
+        let requesterDocRef = userDocRef(uid: A_UID) // Request Sender (Requester)
+        // Action: Remove A from 'incomingRequests', Add A to 'friends'
+        batch.updateData([
+            "incomingRequests": FieldValue.arrayRemove([A_UID]),
+            "friends": FieldValue.arrayUnion([A_UID])
+        ], forDocument: acceptorDocRef)
+        // Action: Add B to 'friends'.
+        batch.updateData([
+            "friends": FieldValue.arrayUnion([B_UID])
+        ], forDocument: requesterDocRef)
+        // The batch ensures both updates succeed or both fail.
+        batch.commit { error in
             if let error = error {
                 completion(error)
                 return
             }
             
-            // PLACEHOLDER FOR NOTIFICATION - I DON"T KNOW HOW TO DO THIS
-            // self.logNotification(for: targetUID, message: "@\(senderProfile.username) sent you a friend request!") { _ in
-            //     completion(nil)
-            // }
-            completion(nil) // Proceed without logging the notification for now
+            // MARK: - PLACE FOR NOTIFICATION LOGIC 
+            // For now, simply complete the friend request logic:
+            completion(nil)
         }
     }
-    
-    // Function to handle accepting a friend request
-    func acceptFriendRequest(myProfile: UserProfile, senderProfile: UserProfile, completion: @escaping (Error?) -> Void) {
-        let myUID = myProfile.uid
-        let senderUID = senderProfile.uid
+    // Atomically removes the friendship connection from both users using a Write Batch.
+    func removeFriendAtomic(userUID_1: String, userUID_2: String, completion: @escaping (Error?) -> Void) {
+        let batch = db.batch()
         
-        // Update MY profile: add sender to friends, remove from incomingRequests
-        var myNewProfile = myProfile
-        if !myNewProfile.friends.contains(senderUID) {
-            myNewProfile.friends.append(senderUID)
-        }
-        myNewProfile.incomingRequests.removeAll { $0 == senderUID }
+        // Update User 1's Document
+        let docRef_1 = userDocRef(uid: userUID_1)
+        batch.updateData([
+            "friends": FieldValue.arrayRemove([userUID_2]) // Remove User 2 from User 1's friends
+        ], forDocument: docRef_1)
         
-        self.updateProfile(userProfile: myNewProfile) { [weak self] error in
-            guard let self = self else { completion(nil); return } // Safety check
-            if let error = error { completion(error); return }
-            
-            // Update SENDER's profile (add me to their friends list)
-            self.fetchUserProfile(uid: senderUID) { result in
-                switch result {
-                case .success(var senderNewProfile):
-                    if !senderNewProfile.friends.contains(myUID) {
-                        senderNewProfile.friends.append(myUID)
-                    }
-                    
-                    self.updateProfile(userProfile: senderNewProfile) { error in
-                        if let error = error { completion(error); return }
-                        
-                        // PLACEHOLDER FOR NOTIFICATION  - I DON"T KNOW HOW TO DO THIS
-                        // let message = "@\(myProfile.username) accepted your friend request!"
-                        // self.logNotification(for: senderUID, message: message) { _ in
-                        //     completion(nil)
-                        // }
-                        completion(nil) // Proceed without logging the notification for now
-                    }
-                case .failure(let error):
-                    completion(error)
-                }
-            }
-        }
+        // Update User 2's Document
+        let docRef_2 = userDocRef(uid: userUID_2)
+        batch.updateData([
+            "friends": FieldValue.arrayRemove([userUID_1]) // Remove User 1 from User 2's friends
+        ], forDocument: docRef_2)
+        
+        // Commit the Batch
+        batch.commit(completion: completion)
     }
+
     
     // Generic function to update the user's entire profile data (used for accepting/removing friends)
     func updateProfile(userProfile: UserProfile, completion: @escaping (Error?) -> Void) {
         do {
             // Using a Codable-based encoder to safely convert the struct back to a dictionary
             let data = try Firestore.Encoder().encode(userProfile)
-            userDocRef(uid: userProfile.uid).setData(data) { error in
+            userDocRef(uid: userProfile.uid).setData(data, merge: true) { error in
                 completion(error)
             }
         } catch {

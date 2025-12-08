@@ -1,13 +1,11 @@
-//  Project: SilentSocial
-//  Names: Phuc Dinh, Nicholas Ng, Preston Tu, Rui Xue
-//  Course: CS329E
-//  FriendListViewController.swift
+// Project: SilentSocial
+// Names: Phuc Dinh, Nicholas Ng, Preston Tu, Rui Xue
+// Course: CS329E
+// FriendListViewController.swift
 
 import UIKit
 import FirebaseAuth
 import FirebaseFirestore
-
-private let FriendCellReuseIdentifier = "FriendCell"
 
 class FriendListViewController: UIViewController, UITextFieldDelegate {
     
@@ -22,7 +20,8 @@ class FriendListViewController: UIViewController, UITextFieldDelegate {
     private var friendsArray: [UserProfile] = []
     private var requestsArray: [UserProfile] = []
     private var searchResultsArray: [UserProfile] = []
-    
+    private var FriendCellReuseIdentifier = "FriendCell"
+
     // Manual Search Bar
     private let searchTextField: UITextField = {
         let textField = UITextField()
@@ -96,7 +95,7 @@ class FriendListViewController: UIViewController, UITextFieldDelegate {
         searchTextField.isHidden = true
         
         searchResultsTableView.translatesAutoresizingMaskIntoConstraints = false
-            
+        
         NSLayoutConstraint.activate([
             // This is the key change: Anchor the table view's top to the search field's bottom
             searchResultsTableView.topAnchor.constraint(equalTo: searchTextField.bottomAnchor, constant:8),
@@ -106,7 +105,7 @@ class FriendListViewController: UIViewController, UITextFieldDelegate {
             searchResultsTableView.bottomAnchor.constraint(equalTo: safeArea.bottomAnchor)
         ])
     }
-        
+    
     // MARK: - Data Loading
     
     private func loadAllRelationshipData() {
@@ -193,7 +192,7 @@ class FriendListViewController: UIViewController, UITextFieldDelegate {
         requestsTableView.isHidden = selectedIndex != 1
         searchResultsTableView.isHidden = selectedIndex != 2
         
-        // 🔑 Control visibility of the manual search bar
+        // Control visibility of the manual search bar
         searchTextField.isHidden = selectedIndex != 2
         
         // Control Keyboard and Focus
@@ -219,11 +218,21 @@ class FriendListViewController: UIViewController, UITextFieldDelegate {
         
         self.view.layoutIfNeeded() // Force layout update
     }
+    
+    // MARK: - Helper (Assuming this helper exists in a base class or extension)
+    private func showInfo(_ title: String, _ message: String) {
+        DispatchQueue.main.async {
+            let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "OK", style: .default))
+            self.present(alert, animated: true)
+        }
+    }
 }
 
 // MARK: - UITableViewDataSource
 extension FriendListViewController: UITableViewDataSource {
     
+    // Corrected protocol method name from 'tableView(_:numberOfRowsInSectionAt:)' to 'tableView(_:numberOfRowsInSection:)'
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if tableView == friendsTableView {
             return friendsArray.count
@@ -251,11 +260,13 @@ extension FriendListViewController: UITableViewDataSource {
                 self?.handleRemoveFriend(for: profile)
             }
         } else if tableView == requestsTableView {
+            // FIX 2: Set user and actionType correctly
             user = requestsArray[indexPath.row]
             actionType = .request
-            // Set the action handler to call the accept logic
-            cell.actionHandler = { [weak self] profile in
-                self?.handleAcceptRequest(for: profile)
+            
+            // Set the action handler to call the accept request logic
+            cell.actionHandler = { [weak self] senderProfile in
+                self?.handleAcceptRequest(for: senderProfile)
             }
         } else { // searchResultsTableView
             user = searchResultsArray[indexPath.row]
@@ -266,17 +277,16 @@ extension FriendListViewController: UITableViewDataSource {
             }
         }
         
+        // Final call to configure the cell now that user and actionType are set
         cell.configure(with: user, type: actionType)
         return cell
     }
-    
-    // NOTE: The obsolete 'updateSearchResults' function is removed.
 }
 
 // MARK: - UITextFieldDelegate (Manual Search Logic)
 extension FriendListViewController {
     
-    //  Called when the user presses 'Return' or 'Search' on the keyboard
+    // Called when the user presses 'Return' or 'Search' on the keyboard
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         textField.resignFirstResponder() // Dismiss the keyboard
         
@@ -311,7 +321,7 @@ extension FriendListViewController: UITableViewDelegate {
         // so we only deselect the row here.
         tableView.deselectRow(at: indexPath, animated: true)
         
-        // MARK: Add navigation to a detailed profile view here
+        // MARK: Add navigation to a detailed profile view here if done
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
@@ -322,81 +332,84 @@ extension FriendListViewController: UITableViewDelegate {
 // MARK: - Friend Action Handlers Database Updater
 extension FriendListViewController {
     
+    // Implements a pre-check to prevent duplicate pending friend requests
     private func handleSendFriendRequest(to targetUser: UserProfile) {
         guard let myUID = FirebaseService.shared.currentUID() else { return }
         
-        // Update the target user's profile by adding my UID to their incomingRequests array
-        FirebaseService.shared.addIncomingRequest(targetUID: targetUser.uid, senderUID: myUID) { [weak self] error in
-            if let error = error {
-                print("Error sending request: \(error.localizedDescription)")
-            } else {
-                // Remove the user from the search results once the request is sent
-                self?.searchResultsArray.removeAll { $0.uid == targetUser.uid }
-                self?.searchResultsTableView.reloadData()
-                print("Request sent successfully to \(targetUser.username)!")
-            }
-        }
-    }
-    
-    private func handleAcceptRequest(for targetUser: UserProfile) {
-        guard var myProfile = currentUserProfile, let myUID = FirebaseService.shared.currentUID() else { return }
-        
-        //  Update MY profile: remove from requests, add to friends
-        myProfile.incomingRequests.removeAll { $0 == targetUser.uid }
-        if !myProfile.friends.contains(targetUser.uid) { myProfile.friends.append(targetUser.uid) }
-        
-        FirebaseService.shared.updateProfile(userProfile: myProfile) { [weak self] error in
-            if let error = error {
-                print("Error accepting request for self: \(error.localizedDescription)")
-                return
-            }
-            // Update TARGET profile: add me to their friends list
-            self?.updateTargetUserFriendList(targetUID: targetUser.uid, myUID: myUID, isAdding: true)
-        }
-    }
-    
-    private func handleRemoveFriend(for targetUser: UserProfile) {
-        guard var myProfile = currentUserProfile, let myUID = FirebaseService.shared.currentUID() else { return }
-        
-        // Update MY profile: remove from friends
-        myProfile.friends.removeAll { $0 == targetUser.uid }
-        
-        FirebaseService.shared.updateProfile(userProfile: myProfile) { [weak self] error in
-            if let error = error {
-                print("Error removing friend for self: \(error.localizedDescription)")
-                return
-            }
-            // Update TARGET profile: remove me from their friends list
-            self?.updateTargetUserFriendList(targetUID: targetUser.uid, myUID: myUID, isAdding: false)
-        }
-    }
-    
-    private func updateTargetUserFriendList(targetUID: String, myUID: String, isAdding: Bool) {
-        FirebaseService.shared.fetchUserProfile(uid: targetUID) { [weak self] result in
+        // Fetch the target user's profile to check for an existing pending request
+        FirebaseService.shared.fetchUserProfile(uid: targetUser.uid) { [weak self] result in
             guard let self = self else { return }
             
-            switch result {
-            case .success(var targetProfile):
-                
-                if isAdding {
-                    // Add me to target's friends list
-                    if !targetProfile.friends.contains(myUID) { targetProfile.friends.append(myUID) }
-                } else {
-                    // Remove me from target's friends list
-                    targetProfile.friends.removeAll { $0 == myUID }
-                }
-                
-                FirebaseService.shared.updateProfile(userProfile: targetProfile) { error in
-                    if let error = error {
-                        print("Error updating target user's friend list: \(error.localizedDescription)")
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let targetProfile):
+                    
+                    // CHECK: Is my UID already in their incomingRequests list?
+                    if targetProfile.incomingRequests.contains(myUID) {
+                        // Request is already pending. Show pop-up and stop.
+                        self.showInfo("Pending Request", "You already sent a pending friend request to @\(targetProfile.username).")
+                        return // Stop execution here
                     }
-                    // Reload all data to refresh friends/requests segments
-                    self.loadAllRelationshipData()
+                    
+                    // If not pending, proceed to send the request (write)
+                    // Update the target user's profile by adding my UID to their incomingRequests array
+                    FirebaseService.shared.addIncomingRequest(targetUID: targetUser.uid, senderUID: myUID) { [weak self] error in
+                        DispatchQueue.main.async {
+                            if let error = error {
+                                print("Error sending request: \(error.localizedDescription)")
+                                self?.showInfo("Error", "Could not send request: \(error.localizedDescription)")
+                            } else {
+                                self?.showInfo("Success", "Friend request sent to @\(targetUser.username).")
+                                // Remove the user from the search results once the request is sent
+                                self?.searchResultsArray.removeAll { $0.uid == targetUser.uid }
+                                self?.searchResultsTableView.reloadData()
+                                // Reload my profile to refresh friend/request status
+                                self?.loadAllRelationshipData()
+                            }
+                        }
+                    }
+                    
+                case .failure(let error):
+                    print("Error fetching target user profile before sending request: \(error.localizedDescription)")
+                    self.showInfo("Error", "Could not verify target user status.")
                 }
-                
-            case .failure(let error):
-                print("Error fetching target user profile for update: \(error.localizedDescription)")
-                self.loadAllRelationshipData()
+            }
+        }
+    }
+    
+    // Uses the new atomic batch function to ensure reciprocal friendship
+    private func handleAcceptRequest(for targetUser: UserProfile) {
+        guard let myUID = FirebaseService.shared.currentUID() else { return }
+        
+        // targetUser is the A_UID (Requester), myUID is the B_UID (Acceptor)
+        FirebaseService.shared.acceptFriendRequestAtomic(requesterUID: targetUser.uid, acceptorUID: myUID) { [weak self] error in
+            DispatchQueue.main.async { // Ensure UI updates happen on the main thread
+                if let error = error {
+                    print("Error accepting request: \(error.localizedDescription)")
+                    self?.showInfo("Error", "Could not accept request: \(error.localizedDescription)")
+                } else {
+                    self?.showInfo("Success", "You are now friends with @\(targetUser.username)!")
+                    // Reload all data to refresh friends/requests segments, handling UI cleanup for both users
+                    self?.loadAllRelationshipData()
+                }
+            }
+        }
+    }
+    
+    // Uses the atomic batch function to remove the friendship from both users simultaneously.
+    private func handleRemoveFriend(for targetUser: UserProfile) {
+        guard let myUID = FirebaseService.shared.currentUID() else { return }
+        
+        FirebaseService.shared.removeFriendAtomic(userUID_1: myUID, userUID_2: targetUser.uid) { [weak self] error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    print("Error removing friend: \(error.localizedDescription)")
+                    self?.showInfo("Error", "Could not remove friend: \(error.localizedDescription)")
+                } else {
+                    self?.showInfo("Success", "You are no longer friends with @\(targetUser.username).")
+                    // Reload all data to refresh friend segments
+                    self?.loadAllRelationshipData()
+                }
             }
         }
     }

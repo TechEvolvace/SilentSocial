@@ -1360,3 +1360,27 @@ extension UIImage {
 extension Notification.Name {
     static let postMoodChanged = Notification.Name("PostMoodChanged")
 }
+
+extension UIImage {
+    func resizedToMaxSquare(_ maxDimension: CGFloat) -> UIImage? {
+        let targetSize: CGSize
+        let width = self.size.width
+        let height = self.size.height
+        
+        let maxSide = max(width, height)
+        
+        if maxSide <= maxDimension {
+            return self
+        }
+        
+        let ratio = maxDimension / maxSide
+        targetSize = CGSize(width: width * ratio, height: height * ratio)
+        
+        let renderer = UIGraphicsImageRenderer(size: targetSize)
+        
+        return renderer.image { _ in
+            self.draw(in: CGRect(origin: .zero, size: targetSize))
+        }
+    }
+    // ... other extensions
+}
