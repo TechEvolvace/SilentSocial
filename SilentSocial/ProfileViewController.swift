@@ -8,7 +8,7 @@ import FirebaseAuth
 import FirebaseFirestore
 import FirebaseStorage
 
-final class ProfileViewController: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+final class ProfileViewController: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate, UITextFieldDelegate {
 
     @IBOutlet weak var avatarImageView: UIImageView!
     @IBOutlet weak var displayNameField: UITextField!
@@ -31,6 +31,12 @@ final class ProfileViewController: UIViewController, UIImagePickerControllerDele
         avatarImageView.isUserInteractionEnabled = true
         let tap = UITapGestureRecognizer(target: self, action: #selector(changePhotoTapped))
         avatarImageView.addGestureRecognizer(tap)
+
+        
+        emojiField.delegate = self
+        let tapEmoji = UITapGestureRecognizer(target: self, action: #selector(openEmojiPicker))
+        emojiField.addGestureRecognizer(tapEmoji)
+        emojiField.isUserInteractionEnabled = true
     }
 
     private func loadProfile() {
@@ -66,6 +72,7 @@ final class ProfileViewController: UIViewController, UIImagePickerControllerDele
         usernameField.text = p.username
         regionField.text = p.region
         emojiField.text = p.currentEmoji
+        
 
         if let urlStr = p.photoURL, let url = URL(string: urlStr) {
             URLSession.shared.dataTask(with: url) { data, _, _ in
@@ -84,6 +91,21 @@ final class ProfileViewController: UIViewController, UIImagePickerControllerDele
         p.region = regionField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? p.region
         p.currentEmoji = emojiField.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? p.currentEmoji
         saveProfileToFirestore(p, silent: false)
+    }
+
+    @objc private func openEmojiPicker() {
+        let picker = EmojiPickerViewController()
+        picker.modalPresentationStyle = .overFullScreen
+        picker.modalTransitionStyle = .crossDissolve
+        picker.onPick = { [weak self] e in
+            self?.emojiField.text = e
+        }
+        present(picker, animated: true)
+    }
+
+    func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
+        if textField === emojiField { openEmojiPicker(); return false }
+        return true
     }
 
     private func saveProfileToFirestore(_ p: UserProfile, silent: Bool) {
