@@ -17,6 +17,7 @@ class DashboardViewController: UIViewController {
     @IBOutlet weak var badgeLabel: UILabel!
     @IBOutlet weak var notificationTableView: UITableView!
     @IBOutlet weak var notificationContainerView: UIView!
+    @IBOutlet weak var friendButton: UIButton!
     
     // MARK: - Properties
     var notifications: [NotificationItem] = []
