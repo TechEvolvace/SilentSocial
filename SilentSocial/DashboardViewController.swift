@@ -9,7 +9,6 @@ import FirebaseStorage
 
 class DashboardViewController: UIViewController {
     
-    // MARK: - Outlets
     @IBOutlet weak var welcomeLabel: UILabel!
     @IBOutlet weak var notificationButton: UIButton!
     @IBOutlet weak var settingsButton: UIButton!
@@ -19,12 +18,10 @@ class DashboardViewController: UIViewController {
     @IBOutlet weak var notificationContainerView: UIView!
     @IBOutlet weak var friendButton: UIButton!
     
-    // MARK: - Properties
     var notifications: [NotificationItem] = []
     var isNotificationMenuVisible = false
     private var selectedImage: UIImage?     
-    
-    // MARK: - New UI: Containers & Collections
+
     private let contentScrollView = UIScrollView()
     private let contentStack = UIStackView()
     
@@ -84,15 +81,17 @@ class DashboardViewController: UIViewController {
     private var postsCollectionView: UICollectionView!
     
 
-    private var galleryItems: [GalleryItem] = [
-        .init(title: "Morning Ride", mood: "🧘‍♂️", date: Date(), image: nil),         
-        .init(title: "Campus Sunset", mood: "🌅", date: Date(), image: nil),       
-        .init(title: "Studio Jam", mood: "🎧", date: Date(), image: nil),          
-        .init(title: "Coffee Time", mood: "☕️", date: Date(), image: nil),          
-        .init(title: "Weekend Sketch", mood: "✏️", date: Date(), image: nil),   
-        .init(title: "Gallery Walk", mood: "🖼️", date: Date(), image: nil),        
-        .init(title: "Quiet Night", mood: "🌙", date: Date(), image: nil)           
-    ]
+    private var galleryItems: [GalleryItem] = []
+    private let galleryEmptyLabel: UILabel = {
+        let l = UILabel()
+        l.text = "No posts yet. Create one to get started!"
+        l.font = .systemFont(ofSize: 16, weight: .regular)
+        l.textColor = .secondaryLabel
+        l.textAlignment = .center
+        l.numberOfLines = 0
+        l.isHidden = true
+        return l
+    }()
     
     private var smallEmojiItems: [SmallItem] = (0..<12).map { _ in SmallItem(text: "🙂") }
     private var smallImageItems: [SmallItem] = (0..<12).map { _ in SmallItem(text: "🖼️") }
@@ -230,6 +229,8 @@ class DashboardViewController: UIViewController {
         galleryCollectionView.contentInset = UIEdgeInsets(top: 0, left: 4, bottom: 0, right: 4)
         galleryCollectionView.heightAnchor.constraint(greaterThanOrEqualToConstant: 520).isActive = true // fits 3 rows comfortably
         contentStack.addArrangedSubview(galleryCollectionView)
+        contentStack.addArrangedSubview(galleryEmptyLabel)
+        updateGalleryEmptyState()
 
         // Spacer below gallery
         let spacer = UIView()
@@ -272,15 +273,15 @@ class DashboardViewController: UIViewController {
     @objc private func addToGalleryTapped() {
         let ac = UIAlertController(title: "Add to Gallery", message: "What would you like to add?", preferredStyle: .actionSheet)
         ac.addAction(UIAlertAction(title: "Emoji", style: .default, handler: { _ in
-            self.galleryItems.insert(.init(title: "New Emoji", mood: "😊 Happy", date: Date(), image: nil), at: 0)  
+            self.galleryItems.insert(.init(title: "New Emoji", mood: "😊 Happy", date: Date(), image: nil, isSketch: false), at: 0)
             self.galleryCollectionView.reloadData()
         }))
         ac.addAction(UIAlertAction(title: "Images", style: .default, handler: { _ in
-            self.galleryItems.insert(.init(title: "New Image", mood: "🖼️ Artsy", date: Date(), image: nil), at: 0)  
+            self.galleryItems.insert(.init(title: "New Image", mood: "🖼️ Artsy", date: Date(), image: nil, isSketch: false), at: 0)
             self.galleryCollectionView.reloadData()
         }))
         ac.addAction(UIAlertAction(title: "Sketches", style: .default, handler: { _ in
-            self.galleryItems.insert(.init(title: "New Sketch", mood: "✏️ Creative", date: Date(), image: nil), at: 0) 
+            self.galleryItems.insert(.init(title: "New Sketch", mood: "✏️ Creative", date: Date(), image: nil, isSketch: true), at: 0)
             self.galleryCollectionView.reloadData()
         }))
         ac.addAction(UIAlertAction(title: "Cancel", style: .cancel))
@@ -298,9 +299,7 @@ class DashboardViewController: UIViewController {
             self.showImageSourceSelection()     
         }))
         ac.addAction(UIAlertAction(title: "Sketch", style: .default, handler: { _ in
-            let a = UIAlertController(title: "Coming Soon", message: "Sketch post creation will be available soon.", preferredStyle: .alert)
-            a.addAction(UIAlertAction(title: "OK", style: .default))
-            self.present(a, animated: true)
+            self.presentSketchCanvas()
         }))
         ac.addAction(UIAlertAction(title: "Cancel", style: .cancel))
         if let pop = ac.popoverPresentationController {
@@ -373,12 +372,14 @@ class DashboardViewController: UIViewController {
             title: "New Image Post",
             mood: "📸",
             date: Date(),
-            image: image
+            image: image,
+            isSketch: false
         )
         galleryItems.insert(newPost, at: 0)
         
         // Reload the gallery collection view to show the new post
         galleryCollectionView.reloadData()
+        updateGalleryEmptyState()
         
         // Scroll to show the new post at the top of the collection view
         galleryCollectionView.scrollToItem(
@@ -398,6 +399,68 @@ class DashboardViewController: UIViewController {
         saveImagePostToFirestore(image)
     }
 
+    private func presentSketchCanvas() {
+        let vc = SketchViewController()
+        vc.modalPresentationStyle = .fullScreen
+        vc.onSave = { [weak self] image in
+            self?.createSketchPost(with: image)
+        }
+        present(vc, animated: true)
+    }
+
+    private func createSketchPost(with image: UIImage) {
+        let newPost = GalleryItem(
+            title: "New Sketch Post",
+            mood: "✏️",
+            date: Date(),
+            image: image,
+            isSketch: true
+        )
+        galleryItems.insert(newPost, at: 0)
+        galleryCollectionView.reloadData()
+        updateGalleryEmptyState()
+        galleryCollectionView.scrollToItem(
+            at: IndexPath(item: 0, section: 0),
+            at: .top,
+            animated: true
+        )
+        let a = UIAlertController(title: "Success!", message: "Your sketch post has been created and added to the gallery.", preferredStyle: .alert)
+        a.addAction(UIAlertAction(title: "OK", style: .default))
+        present(a, animated: true)
+        saveSketchPostToFirestore(image)
+    }
+
+    private func saveSketchPostToFirestore(_ image: UIImage) {
+        guard let uid = FirebaseService.shared.currentUID() else { return }
+        let postID = UUID().uuidString
+        guard let data = image.jpegData(compressionQuality: 0.9) else { return }
+        let ref = FirebaseService.shared.storagePostImageRef(uid: uid, postID: postID)
+        let md = StorageMetadata()
+        md.contentType = "image/jpeg"
+        ref.putData(data, metadata: md) { _, err in
+            if let _ = err { return }
+            ref.downloadURL { url, _ in
+                guard let url = url else { return }
+                let userDoc = FirebaseService.shared.userPostsCollection(uid: uid).document(postID)
+                let payload: [String: Any] = [
+                    "uid": uid,
+                    "type": "sketch",
+                    "imageURL": url.absoluteString,
+                    "createdAt": FieldValue.serverTimestamp()
+                ]
+                userDoc.setData(payload)
+                let globalDoc = FirebaseService.shared.postsCollection().document(postID)
+                globalDoc.setData(payload)
+            }
+        }
+    }
+
+    private func updateGalleryEmptyState() {
+        let isEmpty = galleryItems.isEmpty
+        galleryCollectionView.isHidden = isEmpty
+        galleryEmptyLabel.isHidden = !isEmpty
+    }
+
     private func saveImagePostToFirestore(_ image: UIImage) {
         guard let uid = FirebaseService.shared.currentUID() else { return }
         let postID = UUID().uuidString
@@ -409,13 +472,16 @@ class DashboardViewController: UIViewController {
             if let _ = err { return }
             ref.downloadURL { url, _ in
                 guard let url = url else { return }
-                let doc = FirebaseService.shared.userPostsCollection(uid: uid).document(postID)
-                doc.setData([
+                let userDoc = FirebaseService.shared.userPostsCollection(uid: uid).document(postID)
+                let payload: [String: Any] = [
                     "uid": uid,
                     "type": "image",
                     "imageURL": url.absoluteString,
                     "createdAt": FieldValue.serverTimestamp()
-                ])
+                ]
+                userDoc.setData(payload)
+                let globalDoc = FirebaseService.shared.postsCollection().document(postID)
+                globalDoc.setData(payload)
             }
         }
     }
@@ -484,9 +550,14 @@ extension DashboardViewController: UICollectionViewDataSource, UICollectionViewD
                         location: "",
                         emojiCaption: g.mood,
                         date: g.date,
-                        image: g.image
+                        image: g.image,
+                        isSketch: g.isSketch
                     )
-                    detail.modalPresentationStyle = .overCurrentContext
+                    detail.onEmojiChanged = { [weak self] newEmoji in
+                        guard let self = self else { return }
+                        self.galleryItems[indexPath.item] = GalleryItem(title: g.title, mood: newEmoji, date: g.date, image: g.image, isSketch: g.isSketch)
+                    }
+                    detail.modalPresentationStyle = .overFullScreen
                     detail.modalTransitionStyle = .crossDissolve
                     self.present(detail, animated: true)
                 }
@@ -496,9 +567,14 @@ extension DashboardViewController: UICollectionViewDataSource, UICollectionViewD
                     location: "",
                     emojiCaption: g.mood,
                     date: g.date,
-                    image: g.image
+                    image: g.image,
+                    isSketch: g.isSketch
                 )
-                detail.modalPresentationStyle = .overCurrentContext
+                detail.onEmojiChanged = { [weak self] newEmoji in
+                    guard let self = self else { return }
+                    self.galleryItems[indexPath.item] = GalleryItem(title: g.title, mood: newEmoji, date: g.date, image: g.image, isSketch: g.isSketch)
+                }
+                detail.modalPresentationStyle = .overFullScreen
                 detail.modalTransitionStyle = .crossDissolve
                 present(detail, animated: true)
             }
@@ -680,6 +756,7 @@ struct GalleryItem {
     let mood: String
     let date: Date
     let image: UIImage?
+    let isSketch: Bool
 }
 
 struct SmallItem {
@@ -807,20 +884,18 @@ final class GalleryCell: UICollectionViewCell {
     }
     
     func configure(with item: GalleryItem) {
-        let df = DateFormatter()
-        df.locale = Locale.current
-        df.dateFormat = "MMM. d, yyyy"
-        dateLabel.text = df.string(from: item.date)
-        
+        // Date moved to detail view; hide on dashboard cards
+        dateLabel.text = nil
+        glassBackground.isHidden = true
+
         // Display the image if there is any
         if let image = item.image {
             imageView.image = image
-            // Post in Gallery section Have glass background behind date if the post has an image
-            glassBackground.isHidden = false
+            imageView.backgroundColor = .white
+            imageView.contentMode = item.isSketch ? .scaleAspectFit : .scaleAspectFill
         } else {
             // If no image, use placeholder background color and don't have glass background
             imageView.backgroundColor = UIColor(hex: "#E5E7EB")
-            glassBackground.isHidden = true
         }
     }
 }
@@ -1016,17 +1091,25 @@ final class ModalPreviewController: UIViewController {
 final class PostDetailViewController: UIViewController {
     private let name: String
     private let location: String
-    private let emojiCaption: String
+    private var emojiCaption: String
     private let date: Date
     private let image: UIImage?
+    private let isSketch: Bool
     private let emojiLabel = UILabel()
+    private let emojis = ["🙂", "😍", "❤️", "😘", "😂", "😎", "😢", "😡", "🧘‍♂️", "🌙"]
+    private let addEmojiButton = UIButton(type: .system)
+    private let backdrop = UIVisualEffectView(effect: UIBlurEffect(style: .systemMaterial))
+    private let container = UIView()
+    private let dateLabel = UILabel()
+    var onEmojiChanged: ((String) -> Void)?
     
-    init(name: String, location: String, emojiCaption: String, date: Date, image: UIImage?) {
+    init(name: String, location: String, emojiCaption: String, date: Date, image: UIImage?, isSketch: Bool) {
         self.name = name
         self.location = location
         self.emojiCaption = emojiCaption
         self.date = date
         self.image = image
+        self.isSketch = isSketch
         super.init(nibName: nil, bundle: nil)
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -1034,11 +1117,10 @@ final class PostDetailViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .clear
-        let blur = UIVisualEffectView(effect: UIBlurEffect(style: .systemMaterial))
-        blur.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(blur)
+        isModalInPresentation = true
+        backdrop.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(backdrop)
         
-        let container = UIView()
         container.translatesAutoresizingMaskIntoConstraints = false
         container.backgroundColor = .white
         container.layer.cornerRadius = 16
@@ -1053,7 +1135,8 @@ final class PostDetailViewController: UIViewController {
         headerImage.clipsToBounds = true
         if let img = image {
             headerImage.image = img
-            headerImage.contentMode = .scaleAspectFill
+            headerImage.contentMode = isSketch ? .scaleAspectFit : .scaleAspectFill
+            if isSketch { headerImage.backgroundColor = .white }
         } else {
             headerImage.backgroundColor = UIColor(hex: "#D1D5DB")
             headerImage.contentMode = .scaleAspectFill
@@ -1098,11 +1181,34 @@ final class PostDetailViewController: UIViewController {
 
         let closeBtn = UIButton(type: .system)
         closeBtn.translatesAutoresizingMaskIntoConstraints = false
-        closeBtn.setImage(UIImage(systemName: "xmark.circle.fill"), for: .normal)
-        closeBtn.tintColor = UIColor(hex: "#2C3331")
+        closeBtn.setImage(UIImage(systemName: "xmark"), for: .normal)
+        closeBtn.tintColor = .white
+        closeBtn.backgroundColor = UIColor(red: 1/255, green: 11/255, blue: 231/255, alpha: 1)
+        closeBtn.layer.cornerRadius = 14
+        closeBtn.clipsToBounds = true
         closeBtn.addTarget(self, action: #selector(dismissSelf), for: .touchUpInside)
-        
-        let contentStack = UIStackView(arrangedSubviews: [headerImage, headerStack, emojiLabel])
+
+        addEmojiButton.translatesAutoresizingMaskIntoConstraints = false
+        addEmojiButton.setImage(UIImage(systemName: "face.smiling"), for: .normal)
+        addEmojiButton.tintColor = UIColor(hex: "#2C3331")
+        addEmojiButton.addTarget(self, action: #selector(addEmojiButtonTapped), for: .touchUpInside)
+
+        let emojiRow = UIStackView(arrangedSubviews: [emojiLabel, addEmojiButton])
+        emojiRow.translatesAutoresizingMaskIntoConstraints = false
+        emojiRow.axis = .horizontal
+        emojiRow.spacing = 8
+        emojiRow.alignment = .center
+
+        let df = DateFormatter()
+        df.locale = Locale.current
+        df.dateFormat = "MMM. d, yyyy • h:mm a"
+        dateLabel.translatesAutoresizingMaskIntoConstraints = false
+        dateLabel.textColor = UIColor(hex: "#2C3331")
+        dateLabel.font = .systemFont(ofSize: 14, weight: .medium)
+        dateLabel.textAlignment = .left
+        dateLabel.text = df.string(from: date)
+
+        let contentStack = UIStackView(arrangedSubviews: [headerImage, headerStack, emojiRow, dateLabel])
         contentStack.translatesAutoresizingMaskIntoConstraints = false
         contentStack.axis = .vertical
         contentStack.spacing = 12
@@ -1111,15 +1217,14 @@ final class PostDetailViewController: UIViewController {
         container.addSubview(closeBtn)
         
         NSLayoutConstraint.activate([
-            blur.topAnchor.constraint(equalTo: view.topAnchor),
-            blur.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            blur.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            blur.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            backdrop.topAnchor.constraint(equalTo: view.topAnchor),
+            backdrop.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            backdrop.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            backdrop.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             container.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             container.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 24),
             container.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             container.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            
             headerImage.heightAnchor.constraint(equalToConstant: 180),
             
             avatarBadge.widthAnchor.constraint(equalToConstant: 36),
@@ -1130,28 +1235,51 @@ final class PostDetailViewController: UIViewController {
             contentStack.topAnchor.constraint(equalTo: container.topAnchor, constant: 12),
             contentStack.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 12),
             contentStack.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -12),
+            contentStack.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -12),
 
-            closeBtn.topAnchor.constraint(equalTo: container.topAnchor, constant: 10),
-            closeBtn.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -10),
+            closeBtn.topAnchor.constraint(equalTo: container.topAnchor, constant: -6),
+            closeBtn.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: 0),
             closeBtn.widthAnchor.constraint(equalToConstant: 28),
             closeBtn.heightAnchor.constraint(equalToConstant: 28)
         ])
 
         let tap = UITapGestureRecognizer(target: self, action: #selector(dismissSelf))
-        view.addGestureRecognizer(tap)
+        tap.cancelsTouchesInView = true
+        backdrop.isUserInteractionEnabled = true
+        backdrop.addGestureRecognizer(tap)
     }
+
     
     @objc private func dismissSelf() { dismiss(animated: true) }
 
     @objc private func emojiTapped() {
         let picker = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
-        let options = ["🙂", "😍", "❤️", "😘", "😂", "😎", "😢", "😡", "🧘‍♂️", "🌙"]
-        for e in options {
+        for e in emojis {
             picker.addAction(UIAlertAction(title: e, style: .default, handler: { [weak self] _ in
-                self?.emojiLabel.text = e
+                DispatchQueue.main.async {
+                    self?.emojiLabel.text = e
+                    self?.emojiCaption = e
+                    self?.onEmojiChanged?(e)
+                    NotificationCenter.default.post(name: .postMoodChanged, object: nil, userInfo: ["emoji": e])
+                }
             }))
         }
         picker.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        present(picker, animated: true)
+    }
+
+    @objc private func addEmojiButtonTapped() {
+        let picker = EmojiPickerViewController()
+        picker.modalPresentationStyle = .overFullScreen
+        picker.modalTransitionStyle = .crossDissolve
+        picker.onPick = { [weak self] e in
+            DispatchQueue.main.async {
+                self?.emojiLabel.text = e
+                self?.emojiCaption = e
+                self?.onEmojiChanged?(e)
+                NotificationCenter.default.post(name: .postMoodChanged, object: nil, userInfo: ["emoji": e])
+            }
+        }
         present(picker, animated: true)
     }
 
@@ -1322,11 +1450,9 @@ extension UIColor {
         self.init(red: red, green: green, blue: blue, alpha: 1.0)
     }
 }
-
+//helper function to resize the width of an UIImage
 extension UIImage {
-    // Helper function to resize the width of an UIImage
     func resizedToWidth(width: CGFloat) -> UIImage? {
-        // Avoid division by zero
         guard self.size.width > 0 else { return self }
         
         let ratio = width / self.size.width
@@ -1340,9 +1466,7 @@ extension UIImage {
         }
     }
     
-    // NEW: Helper function to resize the height of an UIImage
     func resizedToHeight(_ maxHeight: CGFloat) -> UIImage? {
-        // Avoid division by zero
         guard self.size.height > 0 else { return self }
         
         let ratio = maxHeight / self.size.height

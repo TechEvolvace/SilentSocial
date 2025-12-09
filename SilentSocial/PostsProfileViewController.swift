@@ -39,6 +39,7 @@ final class PostsProfileViewController: UIViewController, UICollectionViewDataSo
         super.viewDidLoad()
         title = "Profile"
         view.backgroundColor = .systemBackground
+        navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Edit", style: .plain, target: self, action: #selector(editTapped))
         setupUI()
         loadProfile()
         loadPosts()
@@ -149,6 +150,13 @@ final class PostsProfileViewController: UIViewController, UICollectionViewDataSo
                 self.nameLabel.text = self.displayName
                 self.emojiLabel.text = self.emojiCaption
             }
+        }
+    }
+
+    @objc private func editTapped() {
+        let sb = UIStoryboard(name: "Main", bundle: nil)
+        if let profileSettingsVC = sb.instantiateViewController(withIdentifier: "ProfileViewController") as? ProfileViewController {
+            navigationController?.pushViewController(profileSettingsVC, animated: true)
         }
     }
 
