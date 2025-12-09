@@ -1,19 +1,23 @@
-//  Project: SilentSocial
-//  Names: Phuc Dinh, Nicholas Ng, Preston Tu, Rui Xue
-//  Course: CS329E
-//  ProfileSetupViewController.swift
+// Project: SilentSocial
+// Names: Phuc Dinh, Nicholas Ng, Preston Tu, Rui Xue
+// Course: CS329E
+// ProfileSetupViewController.swift
 
 import UIKit
 import FirebaseAuth
 import FirebaseFirestore
-import FirebaseStorage
+import CoreLocation
 
-class ProfileSetupViewController: UIViewController, UITextFieldDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+class ProfileSetupViewController: UIViewController, UITextFieldDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate, CLLocationManagerDelegate {
     
     // Firebase properties
     let db = Firestore.firestore()
     let usersCollection = "users"
-    let storage = Storage.storage() // Added storage reference
+    
+    // Location properties
+    private let locationManager = CLLocationManager()
+    private var geocoder = CLGeocoder()
+    private var regionCode: String = "US" // Default to US if location fails
     
     // Define outlets
     @IBOutlet weak var usernameSetTextField: UITextField!
@@ -43,8 +47,17 @@ class ProfileSetupViewController: UIViewController, UITextFieldDelegate, UIImage
         
         // Save the current user as a variable
         currentUser = Auth.auth().currentUser
+        
+        // Location Setup
+        locationManager.delegate = self
+        locationManager.requestWhenInUseAuthorization() // Request permission
+        
+        // Start attempting to find location once permissions are granted
+        if locationManager.authorizationStatus == .authorizedWhenInUse {
+            locationManager.requestLocation()
+        }
     }
-
+    
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         if !uiConfigured {
@@ -74,85 +87,33 @@ class ProfileSetupViewController: UIViewController, UITextFieldDelegate, UIImage
             errorLabel.text = "Please enter both a username and a display name"
             return
         }
-
-        handleContinueAction(username: username, displayName: displayName)
-    }
-
-    // MARK: - Orchestration and Firebase Storage
-    
-    func handleContinueAction(username: String, displayName: String) {
-        self.errorLabel.text = ""
         
-        if let image = self.selectedProfileImage {
-            self.uploadImageAndContinue(image: image, username: username, displayName: displayName)
-        } else {
-            self.saveUserDataToFirestore(username: username, displayName: displayName, photoURL: nil)
-        }
+        self.saveProfileData(username: username, displayName: displayName, image: selectedProfileImage)
     }
     
-    func uploadImageAndContinue(image: UIImage, username: String, displayName: String) {
-        self.errorLabel.text = "Uploading profile picture..."
-
-        uploadImageToFirebaseStorage(image: image) { [weak self] photoURLString in
-            guard let self = self else { return }
-            
-            if let urlString = photoURLString,
-               let user = self.currentUser,
-               let photoURL = URL(string: urlString) {
-                
-                let changeRequest = user.createProfileChangeRequest()
-                changeRequest.photoURL = photoURL
-                changeRequest.commitChanges { error in
-                    if let error = error {
-                        print("Auth PhotoURL Update Error: \(error.localizedDescription)")
-                    }
-                    self.saveUserDataToFirestore(username: username, displayName: displayName, photoURL: urlString)
-                }
-            } else {
-                self.errorLabel.text = "Error uploading image. Proceeding without picture."
-                self.saveUserDataToFirestore(username: username, displayName: displayName, photoURL: nil)
-            }
-        }
-    }
-    
-    func uploadImageToFirebaseStorage(image: UIImage, completion: @escaping (String?) -> Void) {
-        guard let user = currentUser else {
-            completion(nil)
-            return
-        }
-        
-        guard let imageData = image.jpegData(compressionQuality: 0.8) else {
-            completion(nil)
-            return
-        }
-        
-        let storageRef = storage.reference().child("users/\(user.uid)/profile_pic.jpg")
-        
-        storageRef.putData(imageData, metadata: nil) { metadata, error in
-            guard metadata != nil else {
-                print("Firebase Storage Upload Error: \(error?.localizedDescription ?? "Unknown error")")
-                completion(nil)
-                return
-            }
-            
-            storageRef.downloadURL { url, error in
-                guard let downloadURL = url else {
-                    print("Firebase Storage URL Retrieval Error: \(error?.localizedDescription ?? "Unknown error")")
-                    completion(nil)
-                    return
-                }
-                completion(downloadURL.absoluteString)
-            }
-        }
-    }
-    
-    func saveUserDataToFirestore(username: String, displayName: String, photoURL: String?) {
+    // MARK: - Orchestration and Base64 Encoding
+    // Handle Base64 encoding and Firestore save
+    func saveProfileData(username: String, displayName: String, image: UIImage?) {
         guard let user = currentUser else {
             errorLabel.text = "Authentication error. Please restart application."
             return
         }
         
-        // Check for duplicate usernames
+        // Base64 ENCODING LOGIC
+        var base64String: String? = nil
+        if let selectedImage = image {
+            // Resize the image to a max of 500x500 pixels for small storage size
+            if let resizedImage = selectedImage.resizedToMaxSquare(500) {
+                // Compress the image to JPEG with moderate quality (0.6)
+                if let compressedData = resizedImage.jpegData(compressionQuality: 0.6) {
+                    // Encode the compressed data to a Base64 string
+                    base64String = compressedData.base64EncodedString()
+                    self.errorLabel.text = "Profile picture encoded..."
+                }
+            }
+        }
+        
+        // Check for duplicate usernames and save data
         db.collection(usersCollection).whereField("username", isEqualTo: username).getDocuments { [weak self] (querySnapshot, error) in
             guard let self = self else { return }
             
@@ -170,12 +131,14 @@ class ProfileSetupViewController: UIViewController, UITextFieldDelegate, UIImage
                     "username": username,
                     "displayName": displayName,
                     "email": user.email ?? "",
-                    "createdAt": FieldValue.serverTimestamp()
+                    "createdAt": FieldValue.serverTimestamp(),
+                    "region": self.regionCode, // Uses the region determined by Core Location
+                    "currentEmoji": "🙂"
                 ]
                 
-                // Include the photo URL if available
-                if let url = photoURL {
-                    userData["photoURL"] = url
+                // Include the Base64 string in the photoURL field
+                if let base64 = base64String {
+                    userData["photoURL"] = "data:image/jpeg;base64,\(base64)" // It's good practice to prepend the data URI scheme
                 }
                 
                 userRef.setData(userData) { error in
@@ -197,7 +160,41 @@ class ProfileSetupViewController: UIViewController, UITextFieldDelegate, UIImage
             }
         }
     }
+    
+    // MARK: - CLLocationManagerDelegate
+    
+    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        // If permissions change to authorized, start the location request
+        if manager.authorizationStatus == .authorizedWhenInUse {
+            manager.requestLocation()
+        }
+    }
 
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        guard let location = locations.first else { return }
+        
+        // Stop updates once a location is found
+        manager.stopUpdatingLocation()
+        
+        // Reverse geocode to get the region code
+        geocoder.reverseGeocodeLocation(location) { [weak self] (placemarks, error) in
+            guard let self = self else { return }
+            
+            // Get the two-letter ISO country code (e.g., "US")
+            if let countryCode = placemarks?.first?.isoCountryCode {
+                self.regionCode = countryCode.uppercased()
+                print("Detected Region Code: \(self.regionCode)")
+            } else {
+                print("Could not determine country code from location.")
+            }
+        }
+    }
+
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        print("Location manager failed with error: \(error.localizedDescription). Defaulting to US.")
+        // regionCode remains the default "US"
+    }
+    
     // MARK: - Delegate Methods
     
     // Called when 'return' key pressed
@@ -210,7 +207,7 @@ class ProfileSetupViewController: UIViewController, UITextFieldDelegate, UIImage
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         self.view.endEditing(true)
     }
-
+    
     // MARK: - Image Picker Implementation
     
     @objc func presentImagePicker() {
@@ -236,7 +233,7 @@ class ProfileSetupViewController: UIViewController, UITextFieldDelegate, UIImage
         
         self.present(alert, animated: true)
     }
-
+    
     func imagePickerController(_ picker: UIImagePickerController,
                                didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
         

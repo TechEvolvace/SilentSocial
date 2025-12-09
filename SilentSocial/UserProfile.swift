@@ -12,6 +12,8 @@ struct UserProfile: Codable {
     var region: String
     var currentEmoji: String
     var photoURL: String?   // HTTPS string from Firebase Storage, optional
+    var friends: [String] = []          // Stores UIDs of accepted friends
+    var incomingRequests: [String] = [] // Stores UIDs of users who sent requests
 
     // Default for new users (so Profile screen won’t crash)
     static func empty(uid: String) -> UserProfile {
